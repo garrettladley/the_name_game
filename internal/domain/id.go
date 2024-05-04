@@ -4,6 +4,10 @@ import (
 	"math/rand"
 )
 
+const IDLength int = 7 // 3 runes 1 dash 3 runes
+
+type ID string
+
 func NewID() ID {
 	alphaNumericRunes := []rune{
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
