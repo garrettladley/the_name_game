@@ -1,44 +1,56 @@
 package domain
 
 import (
-	"bytes"
-	"math/rand"
-)
+	"sync"
 
-type Player struct {
-	Name string `json:"name"`
-}
+	"nhooyr.io/websocket"
+)
 
 const IDLength int = 7 // 3 runes 1 dash 3 runes
 
 type ID string
 
-type Game struct {
-	ID      ID       `json:"id"`
-	Players []Player `json:"players"`
+type Player struct {
+	Conn     *websocket.Conn
+	PlayedID ID
+	Name     string
 }
 
-type Games map[ID]Game
+type Game struct {
+	ID    ID
+	Host  Player
+	Conns map[ID]Player
+}
 
-func NewID() ID {
-	alphaNumericRunes := []rune{
-		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-		'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-		'u', 'v', 'w', 'x', 'y', 'z',
+func NewGame() *Game {
+	return &Game{
+		ID:    NewID(),
+		Conns: make(map[ID]Player),
 	}
+}
 
-	numAlphaNumericRunes := 36
+var GAMES = NewGames()
 
-	id := make([]byte, IDLength)
-	buffer := bytes.NewBuffer(id)
+type Games struct {
+	Games sync.Map // K: ID, V: *Game
+}
 
-	for i := range id {
-		if i == 3 { // midpoint, add dash
-			buffer.WriteRune('-')
-		} else {
-			buffer.WriteRune(alphaNumericRunes[rand.Intn(numAlphaNumericRunes)])
-		}
+func NewGames() *Games {
+	return &Games{}
+}
+
+func (g *Games) AddGame(game *Game) {
+	g.Games.Store(game.ID, game)
+}
+
+func (g *Games) GetGame(id ID) (*Game, bool) {
+	game, ok := g.Games.Load(id)
+	if !ok {
+		return nil, false
 	}
-	return ID(buffer.String())
+	return game.(*Game), true
+}
+
+func (g *Games) DeleteGame(id ID) {
+	g.Games.Delete(id)
 }

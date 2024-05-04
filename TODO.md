@@ -1,0 +1,6 @@
+- [ ] Allow a game to be hosted
+- [ ] Allow a game to be joined
+- [ ] Allow a game to be started
+- [ ] HTMX x Templ frontend
+- [ ] install htmx to dir instead of using cdn, use this in base.templ. include this in CI / dry run
+- [ ] CI

@@ -5,19 +5,27 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"time"
 
+	"github.com/garrettladley/the_name_game/internal/domain"
 	"golang.org/x/time/rate"
 	"nhooyr.io/websocket"
 )
 
-type EchoServer struct {
+type Server struct {
 	Logf func(f string, v ...interface{})
 }
 
-func (s EchoServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+var SUBPROTOCOLS = []string{
+	"echo",
+	"new_game",
+	"join_game",
+}
+
+func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		Subprotocols: []string{"echo"},
+		Subprotocols: SUBPROTOCOLS,
 	})
 	if err != nil {
 		s.Logf("%v", err)
@@ -25,22 +33,50 @@ func (s EchoServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.CloseNow()
 
-	if c.Subprotocol() != "echo" {
-		c.Close(websocket.StatusPolicyViolation, "client must speak the echo subprotocol")
+	if slices.Contains(SUBPROTOCOLS, c.Subprotocol()) {
+		c.Close(websocket.StatusPolicyViolation, fmt.Sprintf("invalid subprotocol %q, client must support one of %v", c.Subprotocol(), SUBPROTOCOLS))
 		return
 	}
 
 	l := rate.NewLimiter(rate.Every(time.Millisecond*100), 10)
 	for {
-		err = echo(r.Context(), c, l)
-		if websocket.CloseStatus(err) == websocket.StatusNormalClosure {
-			return
-		}
+		err := handle(c.Subprotocol())(r.Context(), c, l)
 		if err != nil {
-			s.Logf("failed to echo with %v: %v", r.RemoteAddr, err)
+			s.Logf("%v", err)
 			return
 		}
 	}
+}
+
+func handle(protocol string) func(context.Context, *websocket.Conn, *rate.Limiter) error {
+	switch protocol {
+	case "new_game":
+		return newGame
+	case "join_game":
+		return joinGame
+	default:
+		return echo
+	}
+}
+
+func newGame(ctx context.Context, c *websocket.Conn, l *rate.Limiter) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Minute*10)
+	defer cancel()
+
+	err := l.Wait(ctx)
+	if err != nil {
+		return err
+	}
+
+	game := domain.NewGame()
+
+	domain.GAMES.AddGame(game)
+
+	return err
+}
+
+func joinGame(ctx context.Context, c *websocket.Conn, l *rate.Limiter) error {
+	return nil
 }
 
 func echo(ctx context.Context, c *websocket.Conn, l *rate.Limiter) error {
