@@ -4,3 +4,4 @@
 - [ ] HTMX x Templ frontend
 - [ ] install htmx to dir instead of using cdn, use this in base.templ. include this in CI / dry run
 - [ ] CI
+- [ ] Replicate config

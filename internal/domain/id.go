@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"bytes"
 	"math/rand"
 )
 
@@ -16,14 +15,13 @@ func NewID() ID {
 	numAlphaNumericRunes := 36
 
 	id := make([]byte, IDLength)
-	buffer := bytes.NewBuffer(id)
 
-	for i := range id {
-		if i == 3 { // midpoint, add dash
-			buffer.WriteRune('-')
+	for index := range id {
+		if index == 3 { // midpoint, add dash
+			id[index] = '-'
 		} else {
-			buffer.WriteRune(alphaNumericRunes[rand.Intn(numAlphaNumericRunes)])
+			id[index] = byte(alphaNumericRunes[rand.Intn(numAlphaNumericRunes)])
 		}
 	}
-	return ID(buffer.String())
+	return ID(string(id))
 }
