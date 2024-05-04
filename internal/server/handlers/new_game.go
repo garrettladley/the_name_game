@@ -6,12 +6,19 @@ import (
 )
 
 type CreateGameResponse struct {
+	HostID domain.ID `json:"host_id"`
 	GameID domain.ID `json:"game_id"`
 }
 
 func NewGame(c *fiber.Ctx) error {
-	game := domain.NewGame()
-	domain.GAMES.AddGame(game)
+	hostID := domain.NewID()
+	game := domain.NewGame(hostID)
+	domain.GAMES.New(game)
 
-	return c.Status(fiber.StatusCreated).JSON(CreateGameResponse{GameID: game.ID})
+	return c.Status(fiber.StatusCreated).JSON(
+		CreateGameResponse{
+			HostID: hostID,
+			GameID: game.ID,
+		},
+	)
 }
