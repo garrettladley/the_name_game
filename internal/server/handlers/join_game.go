@@ -1,68 +1,89 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 
+	"github.com/garrettladley/the_name_game/internal/constants"
 	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/garrettladley/the_name_game/internal/protocol"
 	"github.com/gofiber/contrib/websocket"
-	"github.com/gofiber/fiber/v2/log"
 )
 
-func Join(c *websocket.Conn) {
-	defer c.Close()
+func Join(conn *websocket.Conn) {
+	defer conn.Close()
 
-	gameID := c.Params("id")
-	hostID := c.Query("host_id", "")
+	rawGameID := conn.Params("game_id")
 
-	if gameID == "" && hostID == "" {
+	if rawGameID == "" {
+		slog.Error("game id not provided")
 		return
 	}
 
-	game, ok := domain.GAMES.Get(domain.ID(gameID))
+	gameID := domain.ID(rawGameID)
+
+	rawPlayerID := conn.Params("plaer_id")
+
+	if rawPlayerID == "" {
+		slog.Error("player id not provided")
+		return
+	}
+
+	playerID := domain.ID(rawPlayerID)
+
+	game, ok := domain.GAMES.Get(gameID)
 	if !ok {
+		slog.Error("game not found", "game_id", gameID)
 		return
 	}
-	var player domain.Player
-	if hostID == "" { // new player
-		playerID := domain.NewID()
-		player = domain.Player{
-			Conn:        c,
-			PlayedID:    playerID,
-			IsSubmitted: false,
-		}
 
-		game.Set(playerID, player)
-	} else { // host
-		hostID := domain.ID(hostID)
-		player, ok := game.Get(hostID)
-		if !ok {
-			log.Infof("host %s not found in game %s", hostID, gameID)
-			return
-		}
-
-		player.Conn = c
-
-		game.Set(hostID, player)
+	player, ok := game.Get(playerID)
+	if !ok {
+		slog.Error("player not found", "player_id", playerID)
+		return
 	}
 
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), constants.EXPIRE_AFTER)
+	defer cancel()
+
+	slog.Info("validation succeeded, conn established, beginning event loop", "game_id", gameID, "player_id", playerID)
+
+	go eventLoop(timeoutCtx, conn, game, &player)
+
+	select {
+	case <-timeoutCtx.Done():
+		slog.Error("game timed out", "game_id", gameID)
+	}
+}
+
+func eventLoop(ctx context.Context, conn *websocket.Conn, game *domain.Game, player *domain.Player) {
 	for {
-		var submitName protocol.SubmitName
-		err := c.ReadJSON(&submitName)
-		if err != nil {
-			log.Error(err)
-			continue
-		}
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			msgType, buff, err := conn.ReadMessage()
+			if err != nil {
+				slog.Error("failed to read message", err)
+				continue
+			}
 
-		err = game.HandleSubmission(submitName.PlayerID, submitName.Name)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		// TODO: check if the game is over?
-		// TODO: allow host to end game
+			if msgType != websocket.BinaryMessage {
+				slog.Error("unexpected message type", "message_type", msgType)
+				continue
+			}
 
+			var submitName protocol.SubmitName
+			err = submitName.UnmarshallBinary(buff)
+
+			err = game.HandleSubmission(player.ID, submitName.Name)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			// TODO: check if the game is over?
+			// TODO: allow host to end game
+		}
 	}
-
-	fmt.Println(game)
 }

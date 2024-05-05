@@ -10,7 +10,7 @@ import (
 
 type Player struct {
 	Conn        *websocket.Conn
-	PlayedID    ID
+	ID          ID
 	IsSubmitted bool
 	Name        *string
 }
@@ -33,7 +33,7 @@ func NewGame(hostID ID) *Game {
 	}
 
 	game.conns[hostID] = Player{
-		PlayedID:    hostID,
+		ID:          hostID,
 		IsSubmitted: false,
 	}
 
@@ -53,6 +53,10 @@ func (g *Game) Set(playerID ID, player Player) {
 	defer g.lock.Unlock()
 
 	g.conns[playerID] = player
+}
+
+func (g *Game) IsHost(playerID ID) bool {
+	return g.HostID == playerID
 }
 
 func (g *Game) HandleSubmission(playerID ID, name string) error {

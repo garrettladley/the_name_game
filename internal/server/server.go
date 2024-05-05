@@ -2,10 +2,10 @@ package server
 
 import (
 	go_json "github.com/goccy/go-json"
+	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2/middleware/session"
 
 	"github.com/garrettladley/the_name_game/internal/server/handlers"
-	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
@@ -35,10 +35,10 @@ func routes(app *fiber.App) {
 
 	app.Get("/", handlers.Home)
 
-	app.Get("/new_game", intoSessionedHandler(handlers.NewGame, store))
+	app.Post("/new_game", intoSessionedHandler(handlers.NewGame, store))
 	app.Get("/game/:game_id", intoSessionedHandler(handlers.Game, store))
 
-	app.Get("/ws/:id", websocket.New(handlers.Join))
+	app.Get("/ws/:game_id", websocket.New(handlers.Join))
 
 	app.Use(func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).SendFile("./views/404.html")

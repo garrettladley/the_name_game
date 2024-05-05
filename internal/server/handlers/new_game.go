@@ -3,33 +3,26 @@ package handlers
 import (
 	"fmt"
 	"log/slog"
-	"time"
+
+	"github.com/garrettladley/the_name_game/internal/constants"
+	"github.com/garrettladley/the_name_game/internal/server/session"
 
 	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/session"
+	fsession "github.com/gofiber/fiber/v2/middleware/session"
 )
 
-func NewGame(c *fiber.Ctx, store *session.Store) error {
+func NewGame(c *fiber.Ctx, store *fsession.Store) error {
 	hostID := domain.NewID()
 	game := domain.NewGame(hostID)
 	domain.GAMES.New(game)
 
-	session, err := store.Get(c)
+	err := session.SetInSession(c, store, "player_id", hostID.String(), session.SetExpiry(constants.EXPIRE_AFTER))
 	if err != nil {
-		slog.Error("error getting session", err)
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	session.Set("player_id", hostID.String())
-
-	session.SetExpiry(2 * time.Second)
-
-	err = session.Save()
-	if err != nil {
-		slog.Error("error saving session", err)
-		return c.SendStatus(fiber.StatusInternalServerError)
-	}
+	slog.Info("new game created", "game_id", game.ID.String(), "host_id", hostID.String())
 
 	return c.Redirect(fmt.Sprintf("/game/%s", game.ID), fiber.StatusSeeOther)
 }
