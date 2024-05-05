@@ -1,0 +1,15 @@
+package game
+
+import (
+	"github.com/garrettladley/the_name_game/internal/domain"
+	"github.com/garrettladley/the_name_game/views/layouts"
+)
+
+templ Game(gameID domain.ID, playerID domain.ID) {
+	@layouts.Base() {
+		<div class="flex flex-col items-center">
+			{ gameID.String() }
+			{ playerID.String() }
+		</div>
+	}
+}

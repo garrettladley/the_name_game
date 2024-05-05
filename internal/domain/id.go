@@ -29,3 +29,7 @@ func NewID() ID {
 	}
 	return ID(string(id))
 }
+
+func (id *ID) String() string {
+	return string(*id)
+}

@@ -16,23 +16,23 @@ type Player struct {
 }
 
 type Game struct {
-	lock     sync.RWMutex
 	ID       ID
 	HostID   ID
 	IsActive bool
-	Conns    map[ID]Player
+	lock     sync.RWMutex
+	conns    map[ID]Player
 }
 
 func NewGame(hostID ID) *Game {
 	game := Game{
-		lock:     sync.RWMutex{},
 		ID:       NewID(),
 		HostID:   hostID,
 		IsActive: true,
-		Conns:    make(map[ID]Player),
+		lock:     sync.RWMutex{},
+		conns:    make(map[ID]Player),
 	}
 
-	game.Conns[hostID] = Player{
+	game.conns[hostID] = Player{
 		PlayedID:    hostID,
 		IsSubmitted: false,
 	}
@@ -44,7 +44,7 @@ func (g *Game) Get(playerID ID) (Player, bool) {
 	g.lock.RLock()
 	defer g.lock.RUnlock()
 
-	player, ok := g.Conns[playerID]
+	player, ok := g.conns[playerID]
 	return player, ok
 }
 
@@ -52,7 +52,7 @@ func (g *Game) Set(playerID ID, player Player) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
-	g.Conns[playerID] = player
+	g.conns[playerID] = player
 }
 
 func (g *Game) HandleSubmission(playerID ID, name string) error {
@@ -64,7 +64,7 @@ func (g *Game) HandleSubmission(playerID ID, name string) error {
 		return nil
 	}
 
-	player, ok := g.Conns[playerID]
+	player, ok := g.conns[playerID]
 	if !ok {
 		return fmt.Errorf("player with ID %s not found", playerID)
 	}
@@ -77,12 +77,12 @@ func (g *Game) HandleSubmission(playerID ID, name string) error {
 	player.Name = &name
 	player.IsSubmitted = true
 
-	g.Conns[playerID] = player
+	g.conns[playerID] = player
 
 	return nil
 }
 
-func (g *Game) ProcessGameOver(playerID ID) error {
+func (g *Game) ProcessGameInactive(playerID ID) error {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
