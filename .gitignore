@@ -3,4 +3,5 @@
 bin
 tmp/
 htmx/
+*_templ.go
 *.fiber.gz
