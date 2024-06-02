@@ -6,6 +6,7 @@ import (
 
 	go_json "github.com/goccy/go-json"
 	"github.com/gofiber/contrib/websocket"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/session"
 
 	"github.com/garrettladley/the_name_game/internal/server/handlers"
@@ -25,8 +26,15 @@ func Setup() *fiber.App {
 		Format: "[${time}] ${ip}:${port} ${pid} ${locals:requestid} ${status} - ${latency} ${method} ${path}\n",
 	}))
 
-	app.Static("/public", "./public")
-	app.Static("/htmx", "./htmx")
+	app.Use(compress.New(compress.Config{
+		Level: compress.LevelBestSpeed,
+	}))
+	app.Static("/", filepath.Join("..", "..", "public"), fiber.Static{
+		Compress: true,
+	})
+	app.Static("/", filepath.Join("..", "..", "htmx"), fiber.Static{
+		Compress: true,
+	})
 
 	routes(app)
 
@@ -36,9 +44,6 @@ func Setup() *fiber.App {
 func routes(app *fiber.App) {
 	store := session.New()
 
-	app.Static("/", filepath.Join("..", "..", "public"), fiber.Static{
-		Compress: true,
-	})
 	app.Get("/", handlers.Home)
 
 	app.Post("/new_game", intoSessionedHandler(handlers.NewGame, store))
@@ -48,7 +53,7 @@ func routes(app *fiber.App) {
 	app.Get("/ws/:game_id/:player_id", websocket.New(handlers.WSJoin))
 
 	app.Use(func(c *fiber.Ctx) error {
-		return c.Status(http.StatusNotFound).SendFile("./views/404.html")
+		return c.Status(http.StatusOK).SendFile(filepath.Join("public", "404.html"))
 	})
 }
 
