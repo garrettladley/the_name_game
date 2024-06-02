@@ -47,13 +47,24 @@ func WSJoin(conn *websocket.Conn) {
 		return
 	}
 
+	if player.Conn != nil {
+		slog.Error("player already has connection", "player_id", playerID)
+		return
+	}
+
+	if err := game.SetPlayerConn(playerID, conn); err != nil {
+		slog.Error("error setting player connection", "error", err)
+		return
+	}
+
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), constants.EXPIRE_AFTER)
 	defer cancel()
 
 	slog.Info("validation succeeded, conn established, beginning event loop", "game_id", gameID, "player_id", playerID)
 
 	done := make(chan struct{})
-	go eventLoop(conn, done, game, &player)
+	mh := NewMessageHandler(conn, done, game, &player)
+	go mh.HandleIncomingMessage()
 
 	select {
 	case <-done:
@@ -63,37 +74,44 @@ func WSJoin(conn *websocket.Conn) {
 	}
 }
 
-func extractIDs(conn *websocket.Conn) (domain.ID, domain.ID, error) {
-	gameID := domain.ID(conn.Params("game_id"))
-	if gameID == "" {
-		return "", "", errors.New("game id not provided")
-	}
-
-	playerID := domain.ID(conn.Params("player_id"))
-	if playerID == "" {
-		return "", "", errors.New("player id not provided")
-	}
-
-	return gameID, playerID, nil
+type MessageHandler struct {
+	conn   *websocket.Conn
+	done   chan struct{}
+	game   *domain.Game
+	player *domain.Player
 }
 
-func eventLoop(conn *websocket.Conn, done chan struct{}, game *domain.Game, player *domain.Player) {
+func NewMessageHandler(conn *websocket.Conn, done chan struct{}, game *domain.Game, player *domain.Player) *MessageHandler {
+	return &MessageHandler{
+		conn:   conn,
+		done:   done,
+		game:   game,
+		player: player,
+	}
+}
+
+func (mh *MessageHandler) HandleIncomingMessage() {
 	for {
 		select {
-		case <-done:
+		case <-mh.done:
 			return
 		default:
-			if err := handleIncomingMessage(conn, done, game, player); err != nil {
+			if err := mh.handleIncomingMessage(); err != nil {
 				return
 			}
 		}
 	}
 }
 
-func handleIncomingMessage(conn *websocket.Conn, done chan struct{}, game *domain.Game, player *domain.Player) error {
-	msgType, buff, err := conn.ReadMessage()
+func (mh *MessageHandler) handleIncomingMessage() error {
+	msgType, buff, err := mh.conn.ReadMessage()
 	if err != nil {
-		return handleReadMessageError(err, game, player)
+		if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
+			slog.Info("connection closed", "game_id", mh.game.ID, "player_id", mh.player.ID, "message", err.Error())
+			close(mh.done)
+			return nil
+		}
+		return mh.handleReadMessageError(err)
 	}
 
 	if msgType != websocket.TextMessage {
@@ -109,53 +127,65 @@ func handleIncomingMessage(conn *websocket.Conn, done chan struct{}, game *domai
 
 	switch msg.Type {
 	case protocol.MessageTypeSubmitName:
-		return handleNameSubmission(done, msg.Data, game, player)
+		return mh.handleNameSubmission(msg.Data)
 	case protocol.MessageTypeEndGame:
-		return handleEndGame(done, game, player)
+		return mh.handleEndGame()
+
 	default:
 		slog.Error("unknown message type", "message_type", msg.Type)
 		return nil // continue processing
 	}
 }
 
-func handleReadMessageError(err error, game *domain.Game, player *domain.Player) error {
+func (mh *MessageHandler) handleReadMessageError(err error) error {
 	switch err {
 	case nil:
 		return nil
 	case websocket.ErrCloseSent:
-		slog.Info("connection closed", "game_id", game.ID, "player_id", player.ID)
+		slog.Info("connection closed", "game_id", mh.game.ID, "player_id", mh.player.ID)
 	default:
 		slog.Error("error reading message", "error", err)
 	}
 	return err
 }
 
-func handleNameSubmission(done chan struct{}, data []byte, game *domain.Game, player *domain.Player) error {
-	defer close(done)
-
+func (mh *MessageHandler) handleNameSubmission(data []byte) error {
 	var submitName protocol.SubmitName
 	if err := go_json.Unmarshal(data, &submitName); err != nil {
 		slog.Error("error unmarshalling submit name", "error", err)
 		return nil // continue processing
 	}
 
-	if err := game.HandleSubmission(player.ID, submitName.Name); err != nil {
+	if err := mh.game.HandleSubmission(mh.player.ID, submitName.Name); err != nil {
 		slog.Error("error handling submission", "error", err)
 		return err
+	} else {
+		slog.Info("submission accepted", "game_id", mh.game.ID, "player_id", mh.player.ID, "name", submitName.Name)
+		close(mh.done)
 	}
-
-	slog.Info("submission accepted", "game_id", game.ID, "player_id", player.ID, "name", submitName.Name)
-
 	return nil
 }
 
-func handleEndGame(done chan struct{}, game *domain.Game, player *domain.Player) error {
-	defer close(done)
-
-	if err := game.ProcessGameInactive(player.ID); err != nil {
+func (mh *MessageHandler) handleEndGame() error {
+	if err := mh.game.ProcessGameInactive(mh.player.ID); err != nil {
 		slog.Error("error processing game inactive", "error", err)
 		return err
+	} else {
+		close(mh.done)
+	}
+	return nil
+}
+
+func extractIDs(conn *websocket.Conn) (domain.ID, domain.ID, error) {
+	gameID := domain.ID(conn.Params("game_id"))
+	if gameID == "" {
+		return "", "", errors.New("game id not provided")
 	}
 
-	return nil
+	playerID := domain.ID(conn.Params("player_id"))
+	if playerID == "" {
+		return "", "", errors.New("player id not provided")
+	}
+
+	return gameID, playerID, nil
 }

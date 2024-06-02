@@ -38,7 +38,7 @@ func routes(app *fiber.App) {
 	app.Get("/", handlers.Home)
 
 	app.Post("/new_game", intoSessionedHandler(handlers.NewGame, store))
-	app.Post("/game/:game_id", intoSessionedHandler(handlers.Game, store))
+	app.Post("/game/:game_id", intoSessionedHandler(handlers.JoinGame, store))
 	app.Get("/game/:game_id", intoSessionedHandler(handlers.Game, store))
 
 	app.Get("/ws/:game_id/:player_id", websocket.New(handlers.WSJoin))
