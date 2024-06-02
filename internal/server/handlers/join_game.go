@@ -1,89 +1,41 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 
 	"github.com/garrettladley/the_name_game/internal/constants"
 	"github.com/garrettladley/the_name_game/internal/domain"
-	"github.com/garrettladley/the_name_game/internal/protocol"
-	"github.com/gofiber/contrib/websocket"
+	"github.com/garrettladley/the_name_game/internal/server/session"
+	"github.com/gofiber/fiber/v2"
+	fsession "github.com/gofiber/fiber/v2/middleware/session"
 )
 
-func Join(conn *websocket.Conn) {
-	defer conn.Close()
+func JoinGame(c *fiber.Ctx, store *fsession.Store) error {
+	gameID := c.Params("game_id")
 
-	rawGameID := conn.Params("game_id")
-
-	if rawGameID == "" {
-		slog.Error("game id not provided")
-		return
+	if gameID == "" {
+		slog.Error("game_id empty")
+		return c.SendStatus(http.StatusBadRequest)
 	}
 
-	gameID := domain.ID(rawGameID)
-
-	rawPlayerID := conn.Params("plaer_id")
-
-	if rawPlayerID == "" {
-		slog.Error("player id not provided")
-		return
-	}
-
-	playerID := domain.ID(rawPlayerID)
-
-	game, ok := domain.GAMES.Get(gameID)
+	game, ok := domain.GAMES.Get(domain.ID(gameID))
 	if !ok {
 		slog.Error("game not found", "game_id", gameID)
-		return
+		return c.SendStatus(http.StatusNotFound)
 	}
 
-	player, ok := game.Get(playerID)
-	if !ok {
-		slog.Error("player not found", "player_id", playerID)
-		return
+	playerID := domain.NewID()
+
+	game.Join(playerID)
+
+	err := session.SetInSession(c, store, "player_id", playerID.String(), session.SetExpiry(constants.EXPIRE_AFTER))
+	if err != nil {
+		return c.SendStatus(http.StatusInternalServerError)
 	}
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), constants.EXPIRE_AFTER)
-	defer cancel()
+	slog.Info("player joined game", "game_id", gameID, "player_id", playerID.String())
 
-	slog.Info("validation succeeded, conn established, beginning event loop", "game_id", gameID, "player_id", playerID)
-
-	go eventLoop(timeoutCtx, conn, game, &player)
-
-	select {
-	case <-timeoutCtx.Done():
-		slog.Error("game timed out", "game_id", gameID)
-	}
-}
-
-func eventLoop(ctx context.Context, conn *websocket.Conn, game *domain.Game, player *domain.Player) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			msgType, buff, err := conn.ReadMessage()
-			if err != nil {
-				slog.Error("failed to read message", err)
-				continue
-			}
-
-			if msgType != websocket.BinaryMessage {
-				slog.Error("unexpected message type", "message_type", msgType)
-				continue
-			}
-
-			var submitName protocol.SubmitName
-			err = submitName.UnmarshallBinary(buff)
-
-			err = game.HandleSubmission(player.ID, submitName.Name)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			// TODO: check if the game is over?
-			// TODO: allow host to end game
-		}
-	}
+	return c.Redirect(fmt.Sprintf("/game/%s", game.ID), http.StatusSeeOther)
 }

@@ -1,7 +1,6 @@
 package session
 
 import (
-	"encoding/gob"
 	"fmt"
 	"time"
 
@@ -9,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
-func GetFromSession[T any](c *fiber.Ctx, store *session.Store, key string) (*T, error) {
+func GetFromSession[V any](c *fiber.Ctx, store *session.Store, key string) (*V, error) {
 	fmt.Println("fctx", c)
 	session, err := store.Get(c)
 	if err != nil {
@@ -21,7 +20,7 @@ func GetFromSession[T any](c *fiber.Ctx, store *session.Store, key string) (*T, 
 		return nil, fmt.Errorf("failed to get value from session with key %s", key)
 	}
 
-	valueAsT, ok := value.(*T)
+	valueAsT, ok := value.(*V)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert value to type %T", value)
 	}
@@ -29,17 +28,8 @@ func GetFromSession[T any](c *fiber.Ctx, store *session.Store, key string) (*T, 
 	return valueAsT, nil
 }
 
-type Gobbale interface {
-	gob.GobEncoder
-	gob.GobDecoder
-}
-type Gobbable interface {
-	gob.GobEncoder
-	gob.GobDecoder
-}
-
 // value must be built-in Go types due to the limitations of session.Set(string, any)
-func SetInSession[T any](c *fiber.Ctx, store *session.Store, key string, value T, opts ...SessionSetterOpts) error {
+func SetInSession[V any](c *fiber.Ctx, store *session.Store, key string, value V, opts ...SessionSetterOpts) error {
 	session, err := store.Get(c)
 	if err != nil {
 		return err

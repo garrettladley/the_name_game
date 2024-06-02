@@ -1,13 +1,24 @@
 package game
 
 import (
+	"fmt"
 	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/garrettladley/the_name_game/views/layouts"
 )
 
 templ Game(gameID domain.ID, playerID domain.ID) {
 	@layouts.Base() {
+		<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/ws.js"></script>
 		<div class="flex flex-col items-center">
+			<div hx-ext="ws" ws-connect={ fmt.Sprintf("/ws/%s/%s", gameID, playerID) }>
+				<div id="notifications" hx-swap-oob="beforeend">
+					New message received
+				</div>
+				<div id="chat_room"></div>
+				<form id="form" ws-send>
+					<input name="chat_message"/>
+				</form>
+			</div>
 			{ gameID.String() }
 			{ playerID.String() }
 		</div>

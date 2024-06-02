@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/gofiber/contrib/websocket"
-	"github.com/gofiber/fiber/v2/log"
 )
 
 type Player struct {
@@ -48,6 +47,16 @@ func (g *Game) Get(playerID ID) (Player, bool) {
 	return player, ok
 }
 
+func (g *Game) Join(playerID ID) {
+	g.lock.Lock()
+	defer g.lock.Unlock()
+
+	g.conns[playerID] = Player{
+		ID:          playerID,
+		IsSubmitted: false,
+	}
+}
+
 func (g *Game) Set(playerID ID, player Player) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
@@ -64,8 +73,7 @@ func (g *Game) HandleSubmission(playerID ID, name string) error {
 	defer g.lock.Unlock()
 
 	if !g.IsActive {
-		log.Infof("game %s is not active", g.ID)
-		return nil
+		return ErrGameOver
 	}
 
 	player, ok := g.conns[playerID]
@@ -74,8 +82,7 @@ func (g *Game) HandleSubmission(playerID ID, name string) error {
 	}
 
 	if player.IsSubmitted {
-		log.Infof("player %s has already submitted a name", playerID)
-		return nil
+		return ErrUserAlreadySubmitted
 	}
 
 	player.Name = &name
