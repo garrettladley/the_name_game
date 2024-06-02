@@ -30,5 +30,12 @@ func Game(c *fiber.Ctx, store *session.Store) error {
 		return c.SendStatus(http.StatusBadRequest)
 	}
 
-	return into(c, game.Game(domain.ID(gameID), domain.ID(playerID.(string))))
+	g, ok := domain.GAMES.Get(domain.ID(gameID))
+	if !ok {
+		slog.Error("game not found", "game_id", gameID)
+		return c.SendStatus(http.StatusNotFound)
+	}
+
+	slog.Info("going to game view", "game_id", gameID, "player_id", playerID, "isHost", g.HostID == domain.ID(playerID.(string)))
+	return into(c, game.Index(domain.ID(gameID), domain.ID(playerID.(string)), g.HostID == domain.ID(playerID.(string))))
 }

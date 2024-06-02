@@ -4,7 +4,7 @@ import (
 	"github.com/garrettladley/the_name_game/views/components"
 )
 
-templ Base() {
+templ Base(nav bool) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -14,9 +14,12 @@ templ Base() {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link rel="stylesheet" href="/public/styles.css"/>
 			<script src="/htmx/htmx.min.js"></script>
+			<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/ws.js"></script>
 		</head>
 		<body class="antialiased">
-			@components.Navigation()
+			if nav {
+				@components.Navigation()
+			}
 			{ children... }
 		</body>
 	</html>

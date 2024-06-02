@@ -1,14 +1,16 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
-	"path/filepath"
 
+	"github.com/garrettladley/the_name_game/internal/server/session"
 	go_json "github.com/goccy/go-json"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2/middleware/compress"
-	"github.com/gofiber/fiber/v2/middleware/session"
+	fsession "github.com/gofiber/fiber/v2/middleware/session"
 
+	"github.com/garrettladley/the_name_game/internal/constants"
 	"github.com/garrettladley/the_name_game/internal/server/handlers"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -29,12 +31,6 @@ func Setup() *fiber.App {
 	app.Use(compress.New(compress.Config{
 		Level: compress.LevelBestSpeed,
 	}))
-	app.Static("/", filepath.Join("..", "..", "public"), fiber.Static{
-		Compress: true,
-	})
-	app.Static("/", filepath.Join("..", "..", "htmx"), fiber.Static{
-		Compress: true,
-	})
 
 	routes(app)
 
@@ -42,22 +38,39 @@ func Setup() *fiber.App {
 }
 
 func routes(app *fiber.App) {
-	store := session.New()
+	store := fsession.New()
 
 	app.Get("/", handlers.Home)
 
 	app.Post("/new_game", intoSessionedHandler(handlers.NewGame, store))
 	app.Post("/game/:game_id", intoSessionedHandler(handlers.JoinGame, store))
 	app.Get("/game/:game_id", intoSessionedHandler(handlers.Game, store))
+	app.Get("/game/:game_id/end", intoSessionedHandler(handlers.EndGame, store))
+	app.Get("/game/:game_id/:player_id/end", intoSessionedHandler(
+		func(c *fiber.Ctx, store *fsession.Store) error {
+			playerID := c.Params("player_id")
+			if playerID == "" {
+				return c.SendStatus(http.StatusBadRequest)
+			}
+
+			gameID := c.Params("game_id")
+			if gameID == "" {
+				return c.SendStatus(http.StatusBadRequest)
+			}
+
+			if err := session.SetInSession(c, store, "player_id", playerID, session.SetExpiry(constants.EXPIRE_AFTER)); err != nil {
+				return c.SendStatus(http.StatusInternalServerError)
+			}
+
+			return c.Redirect(fmt.Sprintf("/game/%s/end", gameID), http.StatusSeeOther)
+		},
+
+		store))
 
 	app.Get("/ws/:game_id/:player_id", websocket.New(handlers.WSJoin))
-
-	app.Use(func(c *fiber.Ctx) error {
-		return c.Status(http.StatusOK).SendFile(filepath.Join("public", "404.html"))
-	})
 }
 
-func intoSessionedHandler(handler func(c *fiber.Ctx, store *session.Store) error, store *session.Store) func(c *fiber.Ctx) error {
+func intoSessionedHandler(handler func(c *fiber.Ctx, store *fsession.Store) error, store *fsession.Store) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		return handler(c, store)
 	}

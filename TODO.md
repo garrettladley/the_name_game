@@ -6,3 +6,4 @@
 - [ ] CI
 - [ ] Replicate config
 - [ ] tailwind seems to be broken rn
+- [ ] make 404 templ so we can reuse base

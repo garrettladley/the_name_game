@@ -3,3 +3,4 @@
 bin
 tmp/
 htmx/
+*.fiber.gz

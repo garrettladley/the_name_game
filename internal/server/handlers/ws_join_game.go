@@ -62,7 +62,7 @@ func WSJoin(conn *fiberws.Conn) {
 
 	done := make(chan struct{})
 	errorCh := make(chan error, 1)
-	go websockets.NewGameMessageHandler(conn, game, &player).HandleIncomingMessage(ctx, done, errorCh)
+	go websockets.NewGameMessageHandler(conn, game, &player).Serve(ctx, done, errorCh)
 
 	select {
 	case <-ctx.Done():
@@ -74,8 +74,6 @@ func WSJoin(conn *fiberws.Conn) {
 	case <-done:
 		slog.Info("done handling incoming message", "game_id", gameID, "player_id", playerID)
 	}
-
-	slog.Info("event loop ended", "game_id", gameID, "player_id", playerID)
 }
 
 func extractIDs(conn *fiberws.Conn) (domain.ID, domain.ID, error) {
