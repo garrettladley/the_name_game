@@ -1,0 +1,12 @@
+package game
+
+import (
+	"github.com/garrettladley/the_name_game/internal/domain"
+	"github.com/garrettladley/the_name_game/views/layouts"
+)
+
+templ End(gameID domain.ID, isHost bool) {
+	@layouts.Base(false) {
+		Game end { gameID.String() }
+	}
+}
