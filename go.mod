@@ -4,11 +4,11 @@ go 1.22.2
 
 require (
 	github.com/a-h/templ v0.2.663
+	github.com/fasthttp/websocket v1.5.8
 	github.com/gofiber/fiber/v2 v2.52.4
 )
 
 require (
-	github.com/fasthttp/websocket v1.5.8 // indirect
 	github.com/savsgio/gotils v0.0.0-20240303185622-093b76447511 // indirect
 	golang.org/x/net v0.23.0 // indirect
 )

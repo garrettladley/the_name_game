@@ -1,5 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     content: [ "./**/*.html", "./**/*.templ", "./**/*.go", ],
-    safelist: [],
+   safelist: [],
+   plugins: [require("daisyui")],
+   daisyui: {
+       themes: ["dark"]
+   }
 }

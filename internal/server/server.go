@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"path/filepath"
 
 	go_json "github.com/goccy/go-json"
 	"github.com/gofiber/contrib/websocket"
@@ -35,6 +36,9 @@ func Setup() *fiber.App {
 func routes(app *fiber.App) {
 	store := session.New()
 
+	app.Static("/", filepath.Join("..", "..", "public"), fiber.Static{
+		Compress: true,
+	})
 	app.Get("/", handlers.Home)
 
 	app.Post("/new_game", intoSessionedHandler(handlers.NewGame, store))

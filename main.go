@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	app := server.Setup()
 
 	log.Fatal(app.Listen(":3000"))
