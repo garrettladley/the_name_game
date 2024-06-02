@@ -9,27 +9,34 @@ import (
 templ Index(gameID domain.ID, playerID domain.ID, isHost bool) {
 	@layouts.Base(false) {
 		<div class="flex flex-col items-center">
-			<div
-				hx-ext="ws"
-				ws-connect={ fmt.Sprintf("/ws/%s/%s", gameID, playerID) }
+			<form
+				hx-post={ fmt.Sprintf("/game/%s/%s/submit", gameID, playerID) }
+				hx-swap="outerHTML"
 			>
-				<form
-					ws-send
-					hx-get={ fmt.Sprintf("/game/%s/%s/end", gameID, playerID) }
-					hx-swap="outerHTML"
+				<input
+					type="text"
+					class="border-2 border-gray-300 p-2"
+					placeholder="Enter a name"
+					autocomplete="off"
+				/>
+				<button
+					id="submitNameButton"
+					type="submit"
+					class="bg-blue-500 text-white px-4 py-2"
 				>
-					<input name="text" type="text" class="border-2 border-gray-300 p-2" placeholder="Enter a name"/>
-					<button id="submitNameButton" type="submit" class="bg-blue-500 text-white px-4 py-2">Submit</button>
-					if isHost {
-						<button id="endGameButton" type="submit" class="bg-red-500 text-white px-4 py-2 mt-4">End Game</button>
-						<script>
-						document.addEventListener('htmx:send', function (event) {
-							console.log(event.detail);
-						});
-						</script>
-					}
-				</form>
-			</div>
+					Submit
+				</button>
+			</form>
+			if isHost {
+				<button
+					hx-post={ fmt.Sprintf("/game/%s/end", gameID) }
+					hx-swap="outerHTML"
+					type="submit"
+					class="bg-red-500 text-white px-4 py-2 mt-4"
+				>
+					End Game
+				</button>
+			}
 		</div>
 	}
 }

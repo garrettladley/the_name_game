@@ -1,0 +1,15 @@
+package components
+
+templ NameInfo(name string, next string) {
+	<div id="name-info-container">
+		<h1>{ name } </h1>
+		<button
+			hx-get={ next }
+			hx-target="#name-info-container"
+			hx-swap="outerHTML"
+			hx-push-url="false"
+		>
+			Next
+		</button>
+	</div>
+}

@@ -1,16 +1,17 @@
 package handlers
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/garrettladley/the_name_game/internal/domain"
-	"github.com/garrettladley/the_name_game/views/game"
+	"github.com/garrettladley/the_name_game/views/components"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/session"
+	fsession "github.com/gofiber/fiber/v2/middleware/session"
 )
 
-func Game(c *fiber.Ctx, store *session.Store) error {
+func PostGameIndex(c *fiber.Ctx, store *fsession.Store) error {
 	gameID := c.Params("game_id")
 
 	session, err := store.Get(c)
@@ -19,8 +20,8 @@ func Game(c *fiber.Ctx, store *session.Store) error {
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
-	playerID := session.Get("player_id")
-	if playerID == nil {
+	playerID, ok := session.Get("player_id").(string)
+	if !ok {
 		slog.Error("player_id not found in session")
 		return c.SendStatus(http.StatusInternalServerError)
 	}
@@ -36,5 +37,23 @@ func Game(c *fiber.Ctx, store *session.Store) error {
 		return c.SendStatus(http.StatusNotFound)
 	}
 
-	return into(c, game.Index(domain.ID(gameID), domain.ID(playerID.(string)), g.HostID == domain.ID(playerID.(string))))
+	if !g.IsHost(domain.ID(playerID)) {
+		return c.SendStatus(http.StatusForbidden)
+	}
+
+	name, ok := g.Next()
+	if !ok {
+		slog.Error("no names left")
+		return c.Redirect("/", http.StatusSeeOther)
+	}
+
+	var next string
+	if g.Len() == 0 {
+		// TODO fix html rendering here
+		next = "/"
+	} else {
+		next = fmt.Sprintf("/game/%s/post", gameID)
+	}
+
+	return into(c, components.NameInfo(*name, next))
 }

@@ -9,7 +9,7 @@ templ Index() {
 		<div class="flex flex-col items-center"></div>
 		<button
 			hx-post="/new_game"
-			hx-trigger="click"
+			hx-push-url="true"
 			hx-swap="outerHTML"
 		>
 			New Game!

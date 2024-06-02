@@ -17,6 +17,12 @@ func NewGame(c *fiber.Ctx, store *fsession.Store) error {
 	game := domain.NewGame(hostID)
 	domain.GAMES.New(game)
 
+	for i := 0; i < 5; i++ {
+		playerID := domain.NewID()
+		game.Join(playerID)
+		game.HandleSubmission(playerID, fmt.Sprintf("player_%d", i))
+	}
+
 	if err := session.SetInSession(c, store, "player_id", hostID.String(), session.SetExpiry(constants.EXPIRE_AFTER)); err != nil {
 		return c.SendStatus(http.StatusInternalServerError)
 	}

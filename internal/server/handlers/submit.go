@@ -1,16 +1,16 @@
 package handlers
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/garrettladley/the_name_game/internal/domain"
-	"github.com/garrettladley/the_name_game/views/game"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/session"
+	fsession "github.com/gofiber/fiber/v2/middleware/session"
 )
 
-func Game(c *fiber.Ctx, store *session.Store) error {
+func Submit(c *fiber.Ctx, store *fsession.Store) error {
 	gameID := c.Params("game_id")
 
 	session, err := store.Get(c)
@@ -19,8 +19,8 @@ func Game(c *fiber.Ctx, store *session.Store) error {
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
-	playerID := session.Get("player_id")
-	if playerID == nil {
+	playerID, ok := session.Get("player_id").(string)
+	if !ok {
 		slog.Error("player_id not found in session")
 		return c.SendStatus(http.StatusInternalServerError)
 	}
@@ -36,5 +36,17 @@ func Game(c *fiber.Ctx, store *session.Store) error {
 		return c.SendStatus(http.StatusNotFound)
 	}
 
-	return into(c, game.Index(domain.ID(gameID), domain.ID(playerID.(string)), g.HostID == domain.ID(playerID.(string))))
+	if !g.IsActive {
+		return c.SendStatus(http.StatusForbidden)
+	}
+
+	if err := g.HandleSubmission(domain.ID(playerID), c.FormValue("name")); err != nil {
+		if errors.Is(err, domain.ErrUserAlreadySubmitted) {
+			return c.SendStatus(http.StatusConflict)
+		}
+		slog.Error("error handling submission", err)
+		return c.SendStatus(http.StatusInternalServerError)
+	}
+
+	return c.SendStatus(http.StatusOK)
 }
