@@ -8,6 +8,7 @@ import (
 	"github.com/garrettladley/the_name_game/internal/constants"
 	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/garrettladley/the_name_game/internal/server/websockets"
+
 	fiberws "github.com/gofiber/contrib/websocket"
 )
 
@@ -56,21 +57,25 @@ func WSJoin(conn *fiberws.Conn) {
 		return
 	}
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), constants.EXPIRE_AFTER)
+	ctx, cancel := context.WithTimeoutCause(context.Background(), constants.EXPIRE_AFTER, errors.New("timeout"))
 	defer cancel()
 
-	slog.Info("validation succeeded, conn established, beginning event loop", "game_id", gameID, "player_id", playerID)
-
 	done := make(chan struct{})
-	mh := websockets.NewGameMessageHandler(conn, done, game, &player)
-	go mh.HandleIncomingMessage()
+	errorCh := make(chan error, 1)
+	go websockets.NewGameMessageHandler(conn, game, &player).HandleIncomingMessage(ctx, done, errorCh)
 
 	select {
+	case <-ctx.Done():
+		slog.Error("context done", "error", ctx.Err())
+	case err := <-errorCh:
+		if err != nil {
+			slog.Error("error handling incoming message", "error", err)
+		}
 	case <-done:
-		slog.Info("game ended or player submitted name", "game_id", gameID, "player_id", playerID)
-	case <-timeoutCtx.Done():
-		slog.Error("game timed out", "game_id", gameID)
+		slog.Info("done handling incoming message", "game_id", gameID, "player_id", playerID)
 	}
+
+	slog.Info("event loop ended", "game_id", gameID, "player_id", playerID)
 }
 
 func extractIDs(conn *fiberws.Conn) (domain.ID, domain.ID, error) {
