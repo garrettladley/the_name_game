@@ -31,7 +31,7 @@ watch-templ:
 	@templ generate --watch --proxy=http://127.0.0.1:3000
 
 build: gen-css gen-templ
-	@go build -tags dev -o bin/the_name_game main.go 
+	@go build -o bin/the_name_game main.go 
 
 run: build
 	@./bin/the_name_game
