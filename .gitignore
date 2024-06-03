@@ -1,6 +1,6 @@
 .DS_Store
 .env
-bin
+bin/
 tmp/
 htmx/
 *_templ.go

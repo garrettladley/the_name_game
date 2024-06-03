@@ -8,3 +8,4 @@
 - [ ] tailwind seems to be broken rn
 - [ ] make 404 templ so we can reuse base
 - [ ] install htmx in dir
+- [ ] untrack css files and generate in ci
