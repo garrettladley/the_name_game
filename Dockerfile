@@ -9,7 +9,7 @@ RUN make build
 RUN > /app/.env
 
 FROM scratch
-COPY --from=builder /bin/the_name_game /the_name_game
+COPY --from=builder /app/bin/the_name_game /the_name_game
 COPY --from=builder /app/.env .env
 
 EXPOSE 3000
