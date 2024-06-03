@@ -1,2 +1,7 @@
 *_test.go
 *.templ
+*.md
+air.toml
+.gitattributes
+.gitignore
+LICENSE
