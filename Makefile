@@ -6,7 +6,7 @@ install: install-templ gen-templ
 	@go mod tidy
 	@go mod download
 	@mkdir -p htmx
-	@wget -q --show-progress -O htmx/htmx.min.js.gz https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js.gz
+	@wget -q -O htmx/htmx.min.js.gz https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js.gz
 	@gunzip -f htmx/htmx.min.js.gz
 	@npm install -D daisyui@latest
 	@npm install -D tailwindcss
