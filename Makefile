@@ -1,5 +1,7 @@
 .PHONY: install gen-css watch-css gen-templ watch-templ build run
 
+NODE_BIN := ./node_modules/.bin
+
 install: install-templ gen-templ
 	@go install github.com/a-h/templ/cmd/templ@latest
 	@go get ./...
@@ -13,10 +15,11 @@ install: install-templ gen-templ
 
 
 gen-css:
-	@tailwindcss build -i views/css/app.css -o public/styles.css
+	@$(NODE_BIN)/tailwindcss build -i views/css/app.css -o public/styles.css
 
 watch-css:
-	@tailwindcss -i views/css/app.css -o public/styles.css --watch 
+	@$(NODE_BIN)/tailwindcss -i views/css/app.css -o public/styles.css --watch 
+
 
 install-templ:
 	@go install github.com/a-h/templ/cmd/templ@latest
