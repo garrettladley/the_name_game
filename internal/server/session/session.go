@@ -2,6 +2,7 @@ package session
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/garrettladley/the_name_game/internal/domain"
@@ -16,6 +17,7 @@ const (
 func GetIDFromSession(c *fiber.Ctx, store *session.Store) (*domain.ID, error) {
 	session, err := store.Get(c)
 	if err != nil {
+		slog.Error("failed to get session", "error", err)
 		return nil, err
 	}
 

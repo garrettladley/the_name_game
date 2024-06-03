@@ -65,13 +65,13 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
+	if g.IsHost(*playerID) {
+		return into(c, game.SubmitSuccess())
+	}
+
 	if err := session.DeleteIDFromSession(c, store); err != nil {
 		slog.Error("failed to delete player_id from session", "error", err)
 		return c.SendStatus(http.StatusInternalServerError)
-	}
-
-	if g.IsHost(*playerID) {
-		return into(c, game.SubmitSuccess())
 	}
 
 	return hxRedirect(c, fmt.Sprintf("/game/%s/post", gameID))

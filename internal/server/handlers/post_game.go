@@ -36,16 +36,14 @@ func PostGame(c *fiber.Ctx, store *fsession.Store) error {
 	var view templ.Component
 	if g.IsHost(*playerID) {
 		if g.SubmittedCount() == 0 {
+			if err := session.DeleteIDFromSession(c, store); err != nil {
+				slog.Error("failed to delete player_id from session", "error", err)
+				return c.SendStatus(http.StatusInternalServerError)
+			}
 			return hxRedirect(c, "/")
 		}
-		var next string
-		if g.SubmittedCount() > 1 {
-			next = fmt.Sprintf("/game/%s/post", gameID)
-		} else {
-			next = "/"
-		}
 		name, _ := g.Next() // ignore error as we know there is a next name
-		view = components.NameInfo(*name, next)
+		view = components.NameInfo(*name, fmt.Sprintf("/game/%s/post", gameID))
 	} else {
 		view = game.Post()
 	}

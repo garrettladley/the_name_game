@@ -42,16 +42,12 @@ func EndGame(c *fiber.Ctx, store *fsession.Store) error {
 
 	name, ok := g.Next()
 	if !ok {
-		slog.Error("no names left")
+		if err := session.DeleteIDFromSession(c, store); err != nil {
+			slog.Error("failed to delete player_id from session", "error", err)
+			return c.SendStatus(http.StatusInternalServerError)
+		}
 		return hxRedirect(c, "/")
 	}
 
-	var next string
-	if g.Len() == 0 {
-		next = "/"
-	} else {
-		next = fmt.Sprintf("/game/%s/post", gameID)
-	}
-
-	return into(c, components.NameInfo(*name, next))
+	return into(c, components.NameInfo(*name, fmt.Sprintf("/game/%s/post", gameID)))
 }
