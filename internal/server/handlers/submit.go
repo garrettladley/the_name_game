@@ -7,6 +7,8 @@ import (
 	"net/http"
 
 	"github.com/garrettladley/the_name_game/internal/domain"
+	"github.com/garrettladley/the_name_game/internal/server/session"
+
 	"github.com/garrettladley/the_name_game/views/game"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,26 +16,19 @@ import (
 )
 
 func Submit(c *fiber.Ctx, store *fsession.Store) error {
-	gameID := c.Params("game_id")
-
-	session, err := store.Get(c)
+	gameID, err := gameIDFromParams(c)
 	if err != nil {
-		slog.Error("error getting session", err)
-		return c.SendStatus(http.StatusInternalServerError)
-	}
-
-	playerID, ok := session.Get("player_id").(string)
-	if !ok {
-		slog.Error("player_id not found in session")
-		return c.SendStatus(http.StatusInternalServerError)
-	}
-
-	if gameID == "" || playerID == "" {
-		slog.Error("game_id or player_id empty", "game_id", gameID, "player_id", playerID)
+		slog.Error("bad game_id", "error", err)
 		return c.SendStatus(http.StatusBadRequest)
 	}
 
-	g, ok := domain.GAMES.Get(domain.ID(gameID))
+	playerID, err := session.GetIDFromSession(c, store)
+	if err != nil {
+		slog.Error("failed to get player_id from session", "error", err)
+		return c.SendStatus(http.StatusInternalServerError)
+	}
+
+	g, ok := domain.GAMES.Get(*gameID)
 	if !ok {
 		slog.Error("game not found", "game_id", gameID)
 		return c.SendStatus(http.StatusNotFound)
@@ -59,10 +54,10 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 	}
 
 	if !ok {
-		return into(c, game.SubmitForm(domain.ID(gameID), g.IsHost(domain.ID(playerID)), params, errs))
+		return into(c, game.SubmitForm(*gameID, g.IsHost(*playerID), params, errs))
 	}
 
-	if err := g.HandleSubmission(domain.ID(playerID), params.Name); err != nil {
+	if err := g.HandleSubmission(*playerID, params.Name); err != nil {
 		if errors.Is(err, domain.ErrUserAlreadySubmitted) {
 			return c.SendStatus(http.StatusConflict)
 		}
@@ -70,7 +65,12 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
-	if g.IsHost(domain.ID(playerID)) {
+	if err := session.DeleteIDFromSession(c, store); err != nil {
+		slog.Error("failed to delete player_id from session", "error", err)
+		return c.SendStatus(http.StatusInternalServerError)
+	}
+
+	if g.IsHost(*playerID) {
 		return into(c, game.SubmitSuccess())
 	}
 

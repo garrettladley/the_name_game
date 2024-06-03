@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/a-h/templ"
+	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
 )
@@ -18,4 +19,8 @@ func hxRedirect(c *fiber.Ctx, to string) error {
 		return c.SendStatus(http.StatusSeeOther)
 	}
 	return c.SendStatus(http.StatusSeeOther)
+}
+
+func gameIDFromParams(c *fiber.Ctx) (*domain.ID, error) {
+	return domain.ParseID(c.Params("game_id"))
 }

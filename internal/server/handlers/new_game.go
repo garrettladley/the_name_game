@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 
-	"github.com/garrettladley/the_name_game/internal/constants"
 	"github.com/garrettladley/the_name_game/internal/server/session"
 
 	"github.com/garrettladley/the_name_game/internal/domain"
@@ -23,7 +23,8 @@ func NewGame(c *fiber.Ctx, store *fsession.Store) error {
 		game.HandleSubmission(playerID, fmt.Sprintf("player_%d", i))
 	}
 
-	if err := session.SetInSession(c, store, "player_id", hostID.String(), session.SetExpiry(constants.EXPIRE_AFTER)); err != nil {
+	if err := session.SetIDInSession(c, store, hostID); err != nil {
+		slog.Error("failed to set player_id in session", "error", err)
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 

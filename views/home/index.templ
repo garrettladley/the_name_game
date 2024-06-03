@@ -16,7 +16,7 @@ templ Index() {
 				Welcome to The Name Game
 			</h1>
 			<a
-				hx-post="/new_game"
+				hx-post="/game/new"
 				hx-swap="outerHTML"
 				hx-target="#home"
 				class="btn btn-primary"
@@ -24,7 +24,7 @@ templ Index() {
 				New Game
 			</a>
 			<a
-				hx-get="/join"
+				hx-get="/game/join"
 				hx-swap="outerHTML"
 				hx-target="#home"
 				class="btn btn-primary"

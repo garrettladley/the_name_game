@@ -1,6 +1,9 @@
 package domain
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 var GAMES = NewGames()
 
@@ -29,6 +32,17 @@ func (g *Games) Get(id ID) (*Game, bool) {
 
 	game, ok := g.games[id]
 	return game, ok
+}
+
+func (g *Games) DeleteExpired() {
+	g.lock.Lock()
+	defer g.lock.Unlock()
+
+	for id, game := range g.games {
+		if time.Now().After(game.ExpiresAt) {
+			delete(g.games, id)
+		}
+	}
 }
 
 func (g *Games) Exists(id ID) bool {

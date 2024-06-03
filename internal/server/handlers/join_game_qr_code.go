@@ -11,18 +11,17 @@ import (
 )
 
 func JoinGameQrCode(c *fiber.Ctx) error {
-	gameID := c.Params("game_id")
-
-	if gameID == "" {
+	gameID, err := gameIDFromParams(c)
+	if err != nil {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if ok := domain.GAMES.Exists(domain.ID(gameID)); !ok {
+	if ok := domain.GAMES.Exists(*gameID); !ok {
 		return c.SendStatus(fiber.StatusNotFound)
 	}
 
 	var png []byte
-	png, err := qrcode.Encode(fmt.Sprintf("https://%s/game/%s/join", c.Hostname(), gameID), qrcode.Medium, 256)
+	png, err = qrcode.Encode(fmt.Sprintf("https://%s/game/%s/join", c.Hostname(), gameID), qrcode.Medium, 256)
 	if err != nil {
 		return err
 	}

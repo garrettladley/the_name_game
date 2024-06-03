@@ -1,7 +1,6 @@
 package game
 
 import (
-	"fmt"
 	"github.com/garrettladley/the_name_game/views/layouts"
 )
 
@@ -18,7 +17,7 @@ templ JoinForm(params JoinParams, errors JoinErrors) {
 		class="space-y-4"
 	>
 		<form
-			hx-post={ fmt.Sprintf("/game/%s", params.GameID) }
+			hx-post="/game/join"
 			hx-swap="outerHTML"
 			class="space-y-4"
 		>
@@ -26,7 +25,7 @@ templ JoinForm(params JoinParams, errors JoinErrors) {
 				<div class="label">
 					<span class="label-text">Game Code</span>
 				</div>
-				<input type="text" value={ params.GameID } name="name" autocomplete="off" required placeholder="Enter a the game code" class="input input-bordered w-full"/>
+				<input type="text" value={ params.GameID } name="game_id" autocomplete="off" required placeholder="Enter a game code" class="input input-bordered w-full"/>
 				if len(errors.GameID) > 0 {
 					<div class="label">
 						<span class="label-text-alt text-error">{ errors.GameID }</span>

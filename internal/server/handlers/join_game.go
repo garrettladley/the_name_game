@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/garrettladley/the_name_game/internal/constants"
 	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/garrettladley/the_name_game/internal/server/session"
 	"github.com/garrettladley/the_name_game/views/game"
@@ -14,25 +13,18 @@ import (
 )
 
 func JoinGame(c *fiber.Ctx, store *fsession.Store) error {
-	gameID := c.Params("game_id")
-
-	if gameID == "" {
-		slog.Error("game_id empty")
-		return c.SendStatus(http.StatusBadRequest)
-	}
-
 	params := game.JoinParams{
 		GameID: c.FormValue("game_id"),
 	}
 
 	var errs game.JoinErrors
-	if len(params.GameID) != domain.IDLength {
-		errs.GameID = "Game Code must be of the form XXX-XXX"
+	gameID, err := domain.ParseID(params.GameID)
+	if err != nil {
+		errs.GameID = "Invalid Game Code"
 		return into(c, game.JoinForm(params, errs))
-
 	}
 
-	g, ok := domain.GAMES.Get(domain.ID(gameID))
+	g, ok := domain.GAMES.Get(*gameID)
 	if !ok {
 		errs.GameID = "Game not found"
 		return into(c, game.JoinForm(params, errs))
@@ -42,8 +34,8 @@ func JoinGame(c *fiber.Ctx, store *fsession.Store) error {
 
 	g.Join(playerID)
 
-	err := session.SetInSession(c, store, "player_id", playerID.String(), session.SetExpiry(constants.EXPIRE_AFTER))
-	if err != nil {
+	if err := session.SetIDInSession(c, store, playerID); err != nil {
+		slog.Error("failed to set player_id in session", "error", err)
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 

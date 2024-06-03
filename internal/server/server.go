@@ -36,12 +36,12 @@ func routes(app *fiber.App) {
 
 	app.Get("/", handlers.Home)
 
-	app.Post("/new_game", intoSessionedHandler(handlers.NewGame, store))
-	app.Get("/join", handlers.Join)
+	app.Post("/game/new", intoSessionedHandler(handlers.NewGame, store))
+	app.Get("/game/join", handlers.JoinGameForm)
+	app.Post("/game/join", intoSessionedHandler(handlers.JoinGame, store))
+	app.Get("/game/:game_id", intoSessionedHandler(handlers.Game, store))
 	app.Get("/game/:game_id/qr", handlers.JoinGameQrCode)
 	app.Get("/game/:game_id/join", intoSessionedHandler(handlers.JoinGameFromQrCode, store))
-	app.Post("/game/:game_id", intoSessionedHandler(handlers.JoinGame, store))
-	app.Get("/game/:game_id", intoSessionedHandler(handlers.Game, store))
 	app.Get("/game/:game_id/post", intoSessionedHandler(handlers.PostGame, store))
 	app.Post("/game/:game_id/submit", intoSessionedHandler(handlers.Submit, store))
 	app.Post("/game/:game_id/end", intoSessionedHandler(handlers.EndGame, store))

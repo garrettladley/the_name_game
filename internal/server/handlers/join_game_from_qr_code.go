@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/garrettladley/the_name_game/internal/constants"
 	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/garrettladley/the_name_game/internal/server/session"
 	"github.com/gofiber/fiber/v2"
@@ -12,12 +11,12 @@ import (
 )
 
 func JoinGameFromQrCode(c *fiber.Ctx, store *fsession.Store) error {
-	gameID := c.Params("game_id")
-	if gameID == "" {
+	gameID, err := gameIDFromParams(c)
+	if err != nil {
 		return c.SendStatus(http.StatusBadRequest)
 	}
 
-	game, ok := domain.GAMES.Get(domain.ID(gameID))
+	game, ok := domain.GAMES.Get(*gameID)
 	if !ok {
 		return c.SendStatus(http.StatusNotFound)
 	}
@@ -26,7 +25,7 @@ func JoinGameFromQrCode(c *fiber.Ctx, store *fsession.Store) error {
 
 	game.Join(playerID)
 
-	if err := session.SetInSession(c, store, "player_id", playerID.String(), session.SetExpiry(constants.EXPIRE_AFTER)); err != nil {
+	if err := session.SetIDInSession(c, store, playerID); err != nil {
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 

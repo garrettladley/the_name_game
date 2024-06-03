@@ -5,6 +5,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func Join(c *fiber.Ctx) error {
+func JoinGameForm(c *fiber.Ctx) error {
 	return into(c, game.Join())
 }

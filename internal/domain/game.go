@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
+	"time"
+
+	"github.com/garrettladley/the_name_game/internal/constants"
 )
 
 type Player struct {
@@ -16,6 +19,7 @@ type Game struct {
 	ID             ID
 	HostID         ID
 	IsActive       bool
+	ExpiresAt      time.Time
 	submittedCount int
 	lock           sync.RWMutex
 	players        map[ID]Player
@@ -23,11 +27,12 @@ type Game struct {
 
 func NewGame(hostID ID) *Game {
 	game := Game{
-		ID:       NewID(),
-		HostID:   hostID,
-		IsActive: true,
-		lock:     sync.RWMutex{},
-		players:  make(map[ID]Player),
+		ID:        NewID(),
+		HostID:    hostID,
+		IsActive:  true,
+		ExpiresAt: time.Now().Add(constants.EXPIRE_AFTER),
+		lock:      sync.RWMutex{},
+		players:   make(map[ID]Player),
 	}
 
 	game.players[hostID] = Player{
