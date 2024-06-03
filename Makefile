@@ -1,19 +1,25 @@
-install:
+.PHONY: install gen-css watch-css gen-templ watch-templ build run
+
+install: install-templ gen-templ
 	@go install github.com/a-h/templ/cmd/templ@latest
 	@go get ./...
 	@go mod tidy
 	@go mod download
 	@mkdir -p htmx
-	@wget -O htmx/htmx.min.js.gz https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js.gz
-	@gunzip htmx/htmx.min.js.gz
+	@wget -q --show-progress -O htmx/htmx.min.js.gz https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js.gz
+	@gunzip -f htmx/htmx.min.js.gz
 	@npm install -D daisyui@latest
 	@npm install -D tailwindcss
+
 
 gen-css:
 	@tailwindcss build -i views/css/app.css -o public/styles.css
 
 watch-css:
 	@tailwindcss -i views/css/app.css -o public/styles.css --watch 
+
+install-templ:
+	@go install github.com/a-h/templ/cmd/templ@latest
 
 gen-templ:
 	@templ generate views
