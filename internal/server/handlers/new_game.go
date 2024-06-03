@@ -17,12 +17,6 @@ func NewGame(c *fiber.Ctx, store *fsession.Store) error {
 	game := domain.NewGame(hostID)
 	domain.GAMES.New(game)
 
-	for i := 0; i < 5; i++ {
-		playerID := domain.NewID()
-		game.Join(playerID)
-		game.HandleSubmission(playerID, fmt.Sprintf("player_%d", i))
-	}
-
 	if err := session.SetIDInSession(c, store, hostID); err != nil {
 		slog.Error("failed to set player_id in session", "error", err)
 		return c.SendStatus(http.StatusInternalServerError)
