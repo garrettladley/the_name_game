@@ -1,6 +1,8 @@
 package server
 
 import (
+	"net/http"
+
 	go_json "github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	fsession "github.com/gofiber/fiber/v2/middleware/session"
@@ -28,6 +30,8 @@ func Setup() *fiber.App {
 
 	routes(app)
 
+	utility(app)
+
 	return app
 }
 
@@ -46,6 +50,12 @@ func routes(app *fiber.App) {
 	app.Post("/game/:game_id/submit", intoSessionedHandler(handlers.Submit, store))
 	app.Post("/game/:game_id/end", intoSessionedHandler(handlers.EndGame, store))
 	app.Get("/game/:game_id/post", intoSessionedHandler(handlers.PostGame, store))
+}
+
+func utility(app *fiber.App) {
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.SendStatus(http.StatusOK)
+	})
 }
 
 func intoSessionedHandler(handler func(c *fiber.Ctx, store *fsession.Store) error, store *fsession.Store) func(c *fiber.Ctx) error {
