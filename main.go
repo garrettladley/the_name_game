@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
+	"embed"
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 
 	"github.com/garrettladley/the_name_game/internal/domain"
@@ -14,6 +15,7 @@ import (
 	"github.com/garrettladley/the_name_game/internal/server/background"
 	"github.com/garrettladley/the_name_game/internal/server/background/job"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 )
 
 func main() {
@@ -43,11 +45,21 @@ func main() {
 	slog.Info("Server shutdown")
 }
 
+//go:embed public
+var PublicFS embed.FS
+
+//go:embed htmx
+var HtmxFS embed.FS
+
 func static(app *fiber.App) {
-	app.Static("/public", filepath.Join(".", "public"), fiber.Static{
-		Compress: true,
-	})
-	app.Static("/htmx", filepath.Join(".", "htmx"), fiber.Static{
-		Compress: true,
-	})
+	app.Use("/public", filesystem.New(filesystem.Config{
+		Root:       http.FS(PublicFS),
+		PathPrefix: "public",
+		Browse:     true,
+	}))
+	app.Use("/htmx", filesystem.New(filesystem.Config{
+		Root:       http.FS(HtmxFS),
+		PathPrefix: "htmx",
+		Browse:     true,
+	}))
 }

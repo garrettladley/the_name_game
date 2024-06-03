@@ -5,7 +5,7 @@ RUN apk add --no-cache make nodejs npm git
 
 COPY . ./
 RUN make install
-RUN make build
+RUN make build-prod
 RUN > /app/.env
 
 FROM scratch
