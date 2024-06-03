@@ -1,6 +1,6 @@
 *_test.go
 *.templ
 *.md
-air.toml
+.air.toml
 .gitignore
 LICENSE
