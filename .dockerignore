@@ -2,6 +2,5 @@
 *.templ
 *.md
 air.toml
-.gitattributes
 .gitignore
 LICENSE
