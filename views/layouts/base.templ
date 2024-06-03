@@ -1,12 +1,10 @@
 package layouts
 
-import (
-	"github.com/garrettladley/the_name_game/views/components"
-)
+import ()
 
-templ Base(nav bool) {
+templ Base() {
 	<!DOCTYPE html>
-	<html lang="en">
+	<html lang="en" data-theme="dark">
 		<head>
 			<title>The Name Game</title>
 			<link rel="icon" type="image/x-icon" href="/public/favicon.ico"/>
@@ -14,11 +12,9 @@ templ Base(nav bool) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link rel="stylesheet" href="/public/styles.css"/>
 			<script src="/htmx/htmx.min.js"></script>
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
 		</head>
 		<body class="antialiased">
-			if nav {
-				@components.Navigation()
-			}
 			{ children... }
 		</body>
 	</html>

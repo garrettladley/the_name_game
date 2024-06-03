@@ -1,0 +1,29 @@
+package game
+
+import "fmt"
+
+templ JoinGameQr(qr string) {
+	<div
+		class="flex flex-col items-center space-y-4"
+	>
+		<button
+			data-visible="true"
+			hx-on:click="
+				if (this.getAttribute('data-visible') === 'true') {
+					htmx.toggleClass('#qr', 'hidden'); 
+					this.innerText = 'Show QR Code';
+					this.setAttribute('data-visible', 'false');
+				} else {
+					htmx.toggleClass('#qr', 'hidden'); 
+					this.innerText = 'Hide';
+					this.setAttribute('data-visible', 'true');
+				}"
+			class="btn btn-secondary w-full"
+		>Hide</button>
+		<div
+			id="qr"
+		>
+			<img src={ fmt.Sprintf("data:image/png;base64,%s", qr) } alt="Join Game QR Code"/>
+		</div>
+	</div>
+}

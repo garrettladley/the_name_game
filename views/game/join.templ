@@ -1,0 +1,55 @@
+package game
+
+import (
+	"fmt"
+	"github.com/garrettladley/the_name_game/views/layouts"
+)
+
+type JoinParams struct {
+	GameID string
+}
+
+type JoinErrors struct {
+	GameID string
+}
+
+templ JoinForm(params JoinParams, errors JoinErrors) {
+	<div
+		class="space-y-4"
+	>
+		<form
+			hx-post={ fmt.Sprintf("/game/%s", params.GameID) }
+			hx-swap="outerHTML"
+			class="space-y-4"
+		>
+			<div class="w-full">
+				<div class="label">
+					<span class="label-text">Game Code</span>
+				</div>
+				<input type="text" value={ params.GameID } name="name" autocomplete="off" required placeholder="Enter a the game code" class="input input-bordered w-full"/>
+				if len(errors.GameID) > 0 {
+					<div class="label">
+						<span class="label-text-alt text-error">{ errors.GameID }</span>
+					</div>
+				}
+			</div>
+			<button
+				type="submit"
+				class="btn btn-primary w-full"
+			>
+				Join
+			</button>
+		</form>
+	</div>
+}
+
+templ Join() {
+	@layouts.Base() {
+		<div class="flex justify-center mt-[calc(100vh-100vh+8rem)]">
+			<div class="max-w-md w-full bg-base-300 py-12 px-8 rounded-xl">
+				<h1 class="text-center text-xl font-black mb-10">Join The Name Game</h1>
+				@JoinForm(JoinParams{}, JoinErrors{})
+			</div>
+		</div>
+	}
+}

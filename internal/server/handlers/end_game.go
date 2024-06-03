@@ -37,7 +37,11 @@ func EndGame(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusNotFound)
 	}
 
-	if err := g.End(domain.ID(playerID)); err != nil {
+	if !g.IsHost(domain.ID(playerID)) {
+		return c.SendStatus(http.StatusForbidden)
+	}
+
+	if err := g.End(); err != nil {
 		slog.Error("error ending game", err)
 		return c.SendStatus(http.StatusInternalServerError)
 	}
@@ -45,7 +49,7 @@ func EndGame(c *fiber.Ctx, store *fsession.Store) error {
 	name, ok := g.Next()
 	if !ok {
 		slog.Error("no names left")
-		return c.Redirect("/", http.StatusSeeOther)
+		return hxRedirect(c, "/")
 	}
 
 	var next string

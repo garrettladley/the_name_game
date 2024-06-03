@@ -42,7 +42,7 @@ func PostGame(c *fiber.Ctx, store *fsession.Store) error {
 	var view templ.Component
 	if g.IsHost(domain.ID(playerID)) {
 		if g.SubmittedCount() == 0 {
-			return c.Redirect("/", http.StatusSeeOther)
+			return hxRedirect(c, "/")
 		}
 		var next string
 		if g.SubmittedCount() > 1 {
@@ -50,7 +50,7 @@ func PostGame(c *fiber.Ctx, store *fsession.Store) error {
 		} else {
 			next = "/"
 		}
-		name, _ := g.Next() // can safely call due to check above
+		name, _ := g.Next() // ignore error as we know there is a next name
 		view = components.NameInfo(*name, next)
 	} else {
 		view = game.Post()

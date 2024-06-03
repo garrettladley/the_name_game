@@ -6,37 +6,72 @@ import (
 	"github.com/garrettladley/the_name_game/views/layouts"
 )
 
-templ Index(gameID domain.ID, playerID domain.ID, isHost bool) {
-	@layouts.Base(false) {
-		<div class="flex flex-col items-center">
-			<form
-				hx-post={ fmt.Sprintf("/game/%s/%s/submit", gameID, playerID) }
-				hx-swap="outerHTML"
+type SubmitParams struct {
+	Name string
+}
+
+type SubmitErrors struct {
+	Name string
+}
+
+templ SubmitForm(gameID domain.ID, isHost bool, params SubmitParams, errors SubmitErrors) {
+	<div
+		class="space-y-4"
+	>
+		<form
+			hx-post={ fmt.Sprintf("/game/%s/submit", gameID), }
+			hx-swap="outerHTML"
+			class="space-y-4"
+		>
+			<div class="w-full">
+				<div class="label">
+					<span class="label-text">Name</span>
+				</div>
+				<input type="text" value={ params.Name } name="name" autocomplete="off" required placeholder="Enter a name" class="input input-bordered w-full"/>
+				if len(errors.Name) > 0 {
+					<div class="label">
+						<span class="label-text-alt text-error">{ errors.Name }</span>
+					</div>
+				}
+			</div>
+			<button
+				type="submit"
+				class="btn btn-primary w-full"
 			>
-				<input
-					type="text"
-					class="border-2 border-gray-300 p-2"
-					placeholder="Enter a name"
-					autocomplete="off"
-				/>
-				<button
-					id="submitNameButton"
-					type="submit"
-					class="bg-blue-500 text-white px-4 py-2"
-				>
-					Submit
-				</button>
-			</form>
-			if isHost {
-				<button
-					hx-post={ fmt.Sprintf("/game/%s/end", gameID) }
-					hx-swap="outerHTML"
-					type="submit"
-					class="bg-red-500 text-white px-4 py-2 mt-4"
-				>
-					End Game
-				</button>
-			}
+				Submit
+			</button>
+		</form>
+		if isHost {
+			<button
+				hx-post={ fmt.Sprintf("/game/%s/end", gameID) }
+				hx-swap="outerHTML"
+				type="submit"
+				class="btn btn-primary w-full"
+			>
+				End Game
+			</button>
+		}
+		<button
+			hx-get={ fmt.Sprintf("/game/%s/qr", gameID) }
+			hx-swap="outerHTML"
+			class="btn btn-secondary w-full"
+		>
+			Show QR Code
+		</button>
+	</div>
+}
+
+templ SubmitSuccess() {
+	<div>Submission successful! </div>
+}
+
+templ Index(gameID domain.ID, isHost bool) {
+	@layouts.Base() {
+		<div class="flex justify-center mt-4">
+			<div class="max-w-md w-full bg-base-300 py-12 px-8 rounded-xl">
+				<h1 class="text-center text-xl font-black mb-10">Submit a name to The Name Game</h1>
+				@SubmitForm(gameID, isHost, SubmitParams{}, SubmitErrors{})
+			</div>
 		</div>
 	}
 }

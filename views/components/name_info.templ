@@ -1,15 +1,31 @@
 package components
 
-templ NameInfo(name string, next string) {
-	<div id="name-info-container">
-		<h1>{ name } </h1>
-		<button
-			hx-get={ next }
-			hx-target="#name-info-container"
-			hx-swap="outerHTML"
-			hx-push-url="false"
+templ NameInfo(name string, to string) {
+	<div
+		id="name_info_container"
+		class="flex flex-col items-center justify-center max-w-md w-full bg-base-300 py-12 px-8 space-y-4 rounded-xl"
+	>
+		<h1
+			class="text-2xl font-bold text-center"
 		>
-			Next
-		</button>
+			{ name }
+		</h1>
+		if to == "/" {
+			<a
+				href={ templ.SafeURL(to) }
+				class="btn btn-primary"
+			>
+				Next
+			</a>
+		} else {
+			<button
+				hx-get={ to }
+				hx-swap="outerHTML"
+				hx-target="#name_info_container"
+				class="btn btn-primary"
+			>
+				Next
+			</button>
+		}
 	</div>
 }

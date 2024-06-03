@@ -27,5 +27,5 @@ func NewGame(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
-	return c.Redirect(fmt.Sprintf("/game/%s", game.ID), http.StatusSeeOther)
+	return hxRedirect(c, fmt.Sprintf("/game/%s", game.ID))
 }

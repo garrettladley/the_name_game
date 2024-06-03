@@ -94,16 +94,12 @@ func (g *Game) HandleSubmission(playerID ID, name string) error {
 	return nil
 }
 
-func (g *Game) End(playerID ID) error {
+func (g *Game) End() error {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
 	if !g.IsActive {
 		return nil
-	}
-
-	if playerID != g.HostID {
-		return fmt.Errorf("player %s is not the host", playerID)
 	}
 
 	g.IsActive = false

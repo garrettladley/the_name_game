@@ -4,7 +4,6 @@ run: build
 install:
 	@go install github.com/a-h/templ/cmd/templ@latest
 	@go get ./...
-	@go mod vendor
 	@go mod tidy
 	@go mod download
 	@npm install -D daisyui@latest

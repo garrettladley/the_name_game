@@ -36,5 +36,5 @@ func Game(c *fiber.Ctx, store *session.Store) error {
 		return c.SendStatus(http.StatusNotFound)
 	}
 
-	return into(c, game.Index(domain.ID(gameID), domain.ID(playerID.(string)), g.HostID == domain.ID(playerID.(string))))
+	return into(c, game.Index(domain.ID(gameID), g.HostID == domain.ID(playerID.(string))))
 }

@@ -5,3 +5,6 @@ tmp/
 htmx/
 *_templ.go
 *.fiber.gz
+node_modules/
+package-lock.json
+package.json

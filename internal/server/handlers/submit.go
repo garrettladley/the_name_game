@@ -2,10 +2,13 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/garrettladley/the_name_game/internal/domain"
+	"github.com/garrettladley/the_name_game/views/game"
+
 	"github.com/gofiber/fiber/v2"
 	fsession "github.com/gofiber/fiber/v2/middleware/session"
 )
@@ -40,7 +43,26 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusForbidden)
 	}
 
-	if err := g.HandleSubmission(domain.ID(playerID), c.FormValue("name")); err != nil {
+	params := game.SubmitParams{
+		Name: c.FormValue("name"),
+	}
+
+	var errs game.SubmitErrors
+	ok = true
+	if len(params.Name) < 2 {
+		ok = false
+		errs.Name = "Name must be at least 2 characters"
+	}
+	if len(params.Name) > 50 {
+		ok = false
+		errs.Name = "Name must be less than 50 characters"
+	}
+
+	if !ok {
+		return into(c, game.SubmitForm(domain.ID(gameID), g.IsHost(domain.ID(playerID)), params, errs))
+	}
+
+	if err := g.HandleSubmission(domain.ID(playerID), params.Name); err != nil {
 		if errors.Is(err, domain.ErrUserAlreadySubmitted) {
 			return c.SendStatus(http.StatusConflict)
 		}
@@ -48,5 +70,9 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
-	return c.SendStatus(http.StatusOK)
+	if g.IsHost(domain.ID(playerID)) {
+		return into(c, game.SubmitSuccess())
+	}
+
+	return hxRedirect(c, fmt.Sprintf("/game/%s/post", gameID))
 }

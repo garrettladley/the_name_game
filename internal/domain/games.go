@@ -31,6 +31,14 @@ func (g *Games) Get(id ID) (*Game, bool) {
 	return game, ok
 }
 
+func (g *Games) Exists(id ID) bool {
+	g.lock.RLock()
+	defer g.lock.RUnlock()
+
+	_, ok := g.games[id]
+	return ok
+}
+
 func (g *Games) Delete(id ID) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
