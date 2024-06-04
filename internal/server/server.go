@@ -3,7 +3,6 @@ package server
 import (
 	"net/http"
 
-	go_json "github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	fsession "github.com/gofiber/fiber/v2/middleware/session"
 
@@ -14,10 +13,7 @@ import (
 )
 
 func Setup() *fiber.App {
-	app := fiber.New(fiber.Config{
-		JSONEncoder: go_json.Marshal,
-		JSONDecoder: go_json.Unmarshal,
-	})
+	app := fiber.New()
 
 	app.Use(requestid.New())
 	app.Use(logger.New(logger.Config{
