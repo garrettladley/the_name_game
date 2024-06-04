@@ -13,13 +13,11 @@ install: install-templ gen-templ
 	@npm install -D daisyui@latest
 	@npm install -D tailwindcss
 
-
 gen-css:
 	@$(NODE_BIN)/tailwindcss build -i views/css/app.css -o public/styles.css
 
 watch-css:
 	@$(NODE_BIN)/tailwindcss -i views/css/app.css -o public/styles.css --watch 
-
 
 install-templ:
 	@go install github.com/a-h/templ/cmd/templ@latest
