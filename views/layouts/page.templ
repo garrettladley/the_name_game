@@ -1,9 +1,7 @@
-package components
-
-import "github.com/garrettladley/the_name_game/views/layouts"
+package layouts
 
 templ Page(id string) {
-	@layouts.Base() {
+	@Base() {
 		<div
 			id={ id }
 			class="w-full max-w-screen-xl h-full max-h-screen-xl mx-auto text-center py-12"
