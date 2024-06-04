@@ -1,0 +1,22 @@
+package components
+
+templ HomeButtons(target string) {
+	<a
+		hx-post="/game/new"
+		hx-swap="outerHTML"
+		hx-target={ target }
+		hx-push-url="true"
+		class="btn btn-primary"
+	>
+		New Game
+	</a>
+	<a
+		hx-get="/game/join"
+		hx-swap="outerHTML"
+		hx-target={ target }
+		hx-push-url="true"
+		class="btn btn-primary"
+	>
+		Join Game
+	</a>
+}

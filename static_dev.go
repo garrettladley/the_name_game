@@ -16,3 +16,7 @@ func public() http.Handler {
 func htmx() http.Handler {
 	return http.StripPrefix("/htmx/", http.FileServerFS(os.DirFS("htmx")))
 }
+
+func assets() http.Handler {
+	return http.StripPrefix("/assets/", http.FileServerFS(os.DirFS("assets")))
+}

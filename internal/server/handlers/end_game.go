@@ -7,7 +7,7 @@ import (
 
 	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/garrettladley/the_name_game/internal/server/session"
-	"github.com/garrettladley/the_name_game/views/components"
+	"github.com/garrettladley/the_name_game/views/game"
 	"github.com/gofiber/fiber/v2"
 	fsession "github.com/gofiber/fiber/v2/middleware/session"
 )
@@ -49,5 +49,5 @@ func EndGame(c *fiber.Ctx, store *fsession.Store) error {
 		return hxRedirect(c, "/")
 	}
 
-	return into(c, components.NameInfo(*name, fmt.Sprintf("/game/%s/post", gameID)))
+	return into(c, game.NameInfo(*name, fmt.Sprintf("/game/%s/post", gameID)))
 }

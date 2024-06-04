@@ -3,6 +3,7 @@ package constants
 import "time"
 
 const (
-	EXPIRE_AFTER   time.Duration = 15 * time.Minute
-	CLEAN_INTERVAL time.Duration = 30 * time.Second
+	EXPIRE_AFTER        time.Duration = 15 * time.Minute
+	CLEAN_INTERVAL      time.Duration = 30 * time.Second
+	GAMES_INFO_INTERVAL time.Duration = 30 * time.Second
 )

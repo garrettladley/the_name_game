@@ -21,3 +21,10 @@ var htmxFS embed.FS
 func htmx() http.Handler {
 	return http.FileServerFS(htmxFS)
 }
+
+//go:embed assets
+var assetsFS embed.FS
+
+func assets() http.Handler {
+	return http.FileServerFS(assetsFS)
+}

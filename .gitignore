@@ -4,6 +4,7 @@ bin/
 tmp/
 htmx/
 *_templ.go
+*_templ.txt
 *.fiber.gz
 public/
 node_modules/

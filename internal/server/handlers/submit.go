@@ -54,7 +54,7 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 	}
 
 	if !ok {
-		return into(c, game.SubmitForm(*gameID, g.IsHost(*playerID), params, errs))
+		return into(c, game.SubmitForm(*gameID, params, errs))
 	}
 
 	if err := g.HandleSubmission(*playerID, params.Name); err != nil {
@@ -66,7 +66,7 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 	}
 
 	if g.IsHost(*playerID) {
-		return into(c, game.SubmitSuccess())
+		return into(c, game.SubmitSuccess(*gameID))
 	}
 
 	return hxRedirect(c, fmt.Sprintf("/game/%s/post", gameID))

@@ -1,10 +1,15 @@
 
 package game
 
-import "github.com/garrettladley/the_name_game/views/layouts"
+import "github.com/garrettladley/the_name_game/views/components"
 
 templ Post() {
-	@layouts.Base() {
-		<p>hey btw the game is over</p>
+	@components.Page("home") {
+		<h1
+			class="text-4xl font-bold mb-4"
+		>
+			Name submitted successfully!
+		</h1>
+		@components.HomeButtons("#home")
 	}
 }

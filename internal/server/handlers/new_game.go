@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/garrettladley/the_name_game/internal/constants"
 	"github.com/garrettladley/the_name_game/internal/server/session"
 
 	"github.com/garrettladley/the_name_game/internal/domain"
@@ -17,7 +18,7 @@ func NewGame(c *fiber.Ctx, store *fsession.Store) error {
 	game := domain.NewGame(hostID)
 	domain.GAMES.New(game)
 
-	if err := session.SetIDInSession(c, store, hostID); err != nil {
+	if err := session.SetIDInSession(c, store, hostID, session.SetExpiry(constants.EXPIRE_AFTER)); err != nil {
 		slog.Error("failed to set player_id in session", "error", err)
 		return c.SendStatus(http.StatusInternalServerError)
 	}

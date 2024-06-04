@@ -8,7 +8,6 @@ import (
 	"github.com/a-h/templ"
 	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/garrettladley/the_name_game/internal/server/session"
-	"github.com/garrettladley/the_name_game/views/components"
 	"github.com/garrettladley/the_name_game/views/game"
 	"github.com/gofiber/fiber/v2"
 	fsession "github.com/gofiber/fiber/v2/middleware/session"
@@ -43,7 +42,7 @@ func PostGame(c *fiber.Ctx, store *fsession.Store) error {
 			return hxRedirect(c, "/")
 		}
 		name, _ := g.Next() // ignore error as we know there is a next name
-		view = components.NameInfo(*name, fmt.Sprintf("/game/%s/post", gameID))
+		view = game.NameInfo(*name, fmt.Sprintf("/game/%s/post", gameID))
 	} else {
 		view = game.Post()
 	}

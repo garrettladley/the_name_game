@@ -2,6 +2,7 @@ package domain
 
 import (
 	"fmt"
+	"log/slog"
 	"math/rand"
 	"sync"
 	"time"
@@ -156,5 +157,14 @@ func (g *Game) Next() (*string, bool) {
 			g.submittedCount--
 			return selectedPlayer.Name, true
 		}
+	}
+}
+
+func (g *Game) Slog() func() {
+	g.lock.RLock()
+	defer g.lock.RUnlock()
+
+	return func() {
+		slog.Info("game", "id", g.ID, "host", g.HostID, "active", g.IsActive, "expires_at", g.ExpiresAt, "players", g.players)
 	}
 }

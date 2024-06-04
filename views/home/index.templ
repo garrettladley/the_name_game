@@ -1,36 +1,16 @@
 package home
 
 import (
-	"github.com/garrettladley/the_name_game/views/layouts"
+	"github.com/garrettladley/the_name_game/views/components"
 )
 
 templ Index() {
-	@layouts.Base() {
-		<div
-			id="home"
-			class="w-full max-w-screen-xl mx-auto text-center py-12"
+	@components.Page("home") {
+		<h1
+			class="text-4xl font-bold mb-4"
 		>
-			<h1
-				class="text-4xl font-bold mb-4"
-			>
-				Welcome to The Name Game
-			</h1>
-			<a
-				hx-post="/game/new"
-				hx-swap="outerHTML"
-				hx-target="#home"
-				class="btn btn-primary"
-			>
-				New Game
-			</a>
-			<a
-				hx-get="/game/join"
-				hx-swap="outerHTML"
-				hx-target="#home"
-				class="btn btn-primary"
-			>
-				Join Game
-			</a>
-		</div>
+			Welcome to The Name Game
+		</h1>
+		@components.HomeButtons("#home")
 	}
 }

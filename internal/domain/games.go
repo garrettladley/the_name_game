@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -58,4 +59,16 @@ func (g *Games) Delete(id ID) {
 	defer g.lock.Unlock()
 
 	delete(g.games, id)
+}
+
+func (g *Games) Slog() func() {
+	g.lock.RLock()
+	defer g.lock.RUnlock()
+
+	return func() {
+		slog.Info("games", "count", len(g.games))
+		for _, game := range g.games {
+			game.Slog()
+		}
+	}
 }

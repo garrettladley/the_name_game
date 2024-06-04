@@ -14,12 +14,10 @@ type SubmitErrors struct {
 	Name string
 }
 
-templ SubmitForm(gameID domain.ID, isHost bool, params SubmitParams, errors SubmitErrors) {
-	<div
-		class="space-y-4"
-	>
+templ SubmitForm(gameID domain.ID, params SubmitParams, errors SubmitErrors) {
+	<div class="space-y-4">
 		<form
-			hx-post={ fmt.Sprintf("/game/%s/submit", gameID), }
+			hx-post={ fmt.Sprintf("/game/%s/submit", gameID) }
 			hx-swap="outerHTML"
 			class="space-y-4"
 		>
@@ -41,16 +39,6 @@ templ SubmitForm(gameID domain.ID, isHost bool, params SubmitParams, errors Subm
 				Submit
 			</button>
 		</form>
-		if isHost {
-			<button
-				hx-post={ fmt.Sprintf("/game/%s/end", gameID) }
-				hx-swap="outerHTML"
-				type="submit"
-				class="btn btn-primary w-full"
-			>
-				End Game
-			</button>
-		}
 		<button
 			hx-get={ fmt.Sprintf("/game/%s/qr", gameID) }
 			hx-swap="outerHTML"
@@ -61,17 +49,29 @@ templ SubmitForm(gameID domain.ID, isHost bool, params SubmitParams, errors Subm
 	</div>
 }
 
-templ SubmitSuccess() {
-	<div>Submission successful! </div>
+templ SubmitSuccess(gameID domain.ID) {
+	<h1 class="text-center text-lg font-black mt-4 mb-4">Submission successful!</h1>
+	<button
+		hx-post={ fmt.Sprintf("/game/%s/end", gameID) }
+		hx-swap="outerHTML"
+		hx-target="#form-wrapper"
+		type="submit"
+		class="btn btn-primary w-full"
+	>
+		End Game
+	</button>
 }
 
 templ Index(gameID domain.ID, isHost bool) {
 	@layouts.Base() {
 		<div class="flex justify-center mt-4">
-			<div class="max-w-md w-full bg-base-300 py-12 px-8 rounded-xl">
-				<h1 class="text-center text-xl font-black mb-10">Submit a name to The Name Game</h1>
+			<div
+				id="form-wrapper"
+				class="max-w-md w-full bg-base-300 py-12 px-8 rounded-xl"
+			>
+				<h1 class="text-center text-xl font-black mb-8">Submit a name to The Name Game</h1>
 				<h2 class="text-center text-lg font-black mb-4">Game Code: { gameID.String() }</h2>
-				@SubmitForm(gameID, isHost, SubmitParams{}, SubmitErrors{})
+				@SubmitForm(gameID, SubmitParams{}, SubmitErrors{})
 			</div>
 		</div>
 	}

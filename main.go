@@ -13,18 +13,19 @@ import (
 	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/garrettladley/the_name_game/internal/server"
 	"github.com/garrettladley/the_name_game/internal/server/background"
-	"github.com/garrettladley/the_name_game/internal/server/background/job"
+	"github.com/garrettladley/the_name_game/internal/server/background/jobs"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 )
 
 func main() {
-	app := server.Setup()
-	static(app)
-
 	ctx := context.Background()
 
-	background.Go(job.New(domain.GAMES).CleanGames(ctx))
+	app := server.Setup()
+
+	static(app)
+
+	backgroundJobs(ctx)
 
 	go func() {
 		if err := app.Listen(":3000"); err != nil {
@@ -51,6 +52,9 @@ var PublicFS embed.FS
 //go:embed htmx
 var HtmxFS embed.FS
 
+//go:embed assets
+var AssetsFS embed.FS
+
 func static(app *fiber.App) {
 	app.Use("/public", filesystem.New(filesystem.Config{
 		Root:       http.FS(PublicFS),
@@ -62,4 +66,16 @@ func static(app *fiber.App) {
 		PathPrefix: "htmx",
 		Browse:     true,
 	}))
+	app.Use("/", filesystem.New(filesystem.Config{
+		Root:       http.FS(AssetsFS),
+		PathPrefix: "assets",
+		Browse:     true,
+	}))
+}
+
+func backgroundJobs(ctx context.Context) {
+	j := jobs.New(domain.GAMES)
+
+	background.Go(j.CleanGames(ctx))
+	background.Go(j.GamesInfo(ctx))
 }
