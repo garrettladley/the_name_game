@@ -1,10 +1,10 @@
 package components
 
-templ HomeButtons(target string) {
+templ HomeButtons(newTarget string, joinTarget string) {
 	<a
 		hx-post="/game/new"
 		hx-swap="outerHTML"
-		hx-target={ target }
+		hx-target={ newTarget }
 		hx-push-url="true"
 		class="btn btn-primary"
 	>
@@ -13,7 +13,7 @@ templ HomeButtons(target string) {
 	<a
 		hx-get="/game/join"
 		hx-swap="outerHTML"
-		hx-target={ target }
+		hx-target={ joinTarget }
 		hx-push-url="true"
 		class="btn btn-primary"
 	>
