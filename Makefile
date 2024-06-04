@@ -1,4 +1,4 @@
-.PHONY: install gen-css watch-css gen-templ watch-templ build run
+.PHONY: install gen-css watch-css install-templ gen-templ watch-templ build build-prod run
 
 NODE_BIN := ./node_modules/.bin
 
