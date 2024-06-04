@@ -68,7 +68,7 @@ func (g *Games) Slog() func() {
 	return func() {
 		slog.Info("games", "count", len(g.games))
 		for _, game := range g.games {
-			game.Slog()
+			game.Slog()()
 		}
 	}
 }
