@@ -19,6 +19,7 @@ templ SubmitForm(gameID domain.ID, params SubmitParams, errors SubmitErrors) {
 		<form
 			hx-post={ fmt.Sprintf("/game/%s/submit", gameID) }
 			hx-swap="outerHTML"
+			hx-push-url="true"
 			class="space-y-4"
 		>
 			<div class="w-full">
