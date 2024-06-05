@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/garrettladley/the_name_game/internal/constants"
 	"github.com/garrettladley/the_name_game/internal/domain"
@@ -15,7 +16,7 @@ import (
 
 func JoinGame(c *fiber.Ctx, store *fsession.Store) error {
 	params := game.JoinParams{
-		GameID: c.FormValue("game_id"),
+		GameID: strings.TrimSpace(c.FormValue("game_id")),
 	}
 
 	var errs game.JoinErrors

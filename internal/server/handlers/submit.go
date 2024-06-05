@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/garrettladley/the_name_game/internal/server/session"
@@ -39,7 +40,7 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 	}
 
 	params := game.SubmitParams{
-		Name: c.FormValue("name"),
+		Name: strings.TrimSpace(c.FormValue("name")),
 	}
 
 	var errs game.SubmitErrors
