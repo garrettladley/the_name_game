@@ -4,11 +4,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/garrettladley/the_name_game/internal/server/handlers"
+	"github.com/garrettladley/the_name_game/internal/server/middleware"
 	"github.com/gofiber/fiber/v2/middleware/cache"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	fsession "github.com/gofiber/fiber/v2/middleware/session"
 
-	"github.com/garrettladley/the_name_game/internal/server/handlers"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
@@ -30,6 +31,8 @@ func Setup() *fiber.App {
 		Expiration:   30 * time.Minute,
 		CacheControl: true,
 	}))
+
+	app.Use(middleware.SetOriginalURL)
 
 	routes(app)
 
