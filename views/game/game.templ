@@ -14,8 +14,6 @@ type SubmitErrors struct {
 	Name string
 }
 
-var shareOnce = templ.NewOnceHandle()
-
 templ SubmitForm(gameID domain.ID, params SubmitParams, errors SubmitErrors) {
 	<div class="space-y-4">
 		<form
@@ -42,7 +40,40 @@ templ SubmitForm(gameID domain.ID, params SubmitParams, errors SubmitErrors) {
 				Submit
 			</button>
 		</form>
-		<button id="shareButton" class="btn btn-primary w-full">
+		@templ.JSONScript("gameID", gameID)
+		<button
+			id="shareButton"
+			class="btn btn-primary w-full"
+			hx-on:click="
+				const url = `https://${window.location.hostname}/game/${JSON.parse(document.getElementById('gameID').textContent)}/join`;
+				if (navigator.share) {
+					try {
+						navigator.share({
+							title: 'Join this game',
+							text: 'Check out this game!',
+							url: url
+						})
+						.then(() => {
+							console.log('Content shared successfully');
+						})
+						.catch((error) => {
+							console.error('Error sharing content:', error);
+						});
+					} catch (error) {
+						console.error('Error sharing content:', error);
+					}
+				} else {
+					navigator.clipboard.writeText(url)
+						.then(() => {
+							alert('URL copied to clipboard');
+							console.log('URL copied to clipboard');
+						})
+						.catch((error) => {
+							console.error('Error copying URL:', error);
+						});
+				}
+			"
+		>
 			Share this game
 		</button>
 		<button
@@ -55,33 +86,6 @@ templ SubmitForm(gameID domain.ID, params SubmitParams, errors SubmitErrors) {
 			Show QR Code
 		</button>
 	</div>
-	@shareOnce.Once() {
-		<script type="text/javascript">
-            (() => {
-				const shareButton = document.getElementById('shareButton');
-				const qrButton = document.getElementById('qrButton');
-
-				if (navigator.share) {
-					shareButton.addEventListener('click', async () => {
-						try {
-							await navigator.share({
-								title: 'Join this game',
-								text: 'Check out this game!',
-								url: `https://${window.location.hostname}/game/${gameID}/join`
-							});
-							console.log('Content shared successfully');
-						} catch (error) {
-							console.error('Error sharing content:', error);
-						}
-					});
-				} else {
-					shareButton.style.display = 'none';
-					qrButton.style.display = 'block';
-				}
-
-            })();
-        </script>
-	}
 }
 
 templ SubmitSuccess(gameID domain.ID) {
