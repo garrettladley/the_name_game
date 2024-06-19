@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	"github.com/garrettladley/the_name_game/internal/domain"
+	"github.com/garrettladley/the_name_game/views/layouts"
 )
 
 type SubmitParams struct {
@@ -12,6 +13,8 @@ type SubmitParams struct {
 type SubmitErrors struct {
 	Name string
 }
+
+var shareOnce = templ.NewOnceHandle()
 
 templ SubmitForm(gameID domain.ID, params SubmitParams, errors SubmitErrors) {
 	<div class="space-y-4">
@@ -39,14 +42,47 @@ templ SubmitForm(gameID domain.ID, params SubmitParams, errors SubmitErrors) {
 				Submit
 			</button>
 		</form>
+		<button id="shareButton" class="btn btn-primary w-full">
+			Share this game
+		</button>
 		<button
+			id="qrButton"
 			hx-get={ fmt.Sprintf("/game/%s/qr", gameID) }
 			hx-swap="outerHTML"
 			class="btn btn-secondary w-full"
+			type="button"
+			style="display: none;"
 		>
 			Show QR Code
 		</button>
 	</div>
+	@shareOnce.Once() {
+		<script type="text/javascript">
+            (() => {
+				const shareButton = document.getElementById('shareButton');
+				const qrButton = document.getElementById('qrButton');
+
+				if (navigator.share) {
+					shareButton.addEventListener('click', async () => {
+						try {
+							await navigator.share({
+								title: 'Join this game',
+								text: 'Check out this game!',
+								url: `https://${window.location.hostname}/game/${gameID}/join`
+							});
+							console.log('Content shared successfully');
+						} catch (error) {
+							console.error('Error sharing content:', error);
+						}
+					});
+				} else {
+					shareButton.style.display = 'none';
+					qrButton.style.display = 'block';
+				}
+
+            })();
+        </script>
+	}
 }
 
 templ SubmitSuccess(gameID domain.ID) {
@@ -64,14 +100,16 @@ templ SubmitSuccess(gameID domain.ID) {
 }
 
 templ Index(gameID domain.ID, isHost bool) {
-	<div class="flex justify-center">
-		<div
-			id="form-wrapper"
-			class="max-w-md w-full py-12 px-8 rounded-xl"
-		>
-			<h1 class="text-center text-xl font-black mb-8">Submit a name to The Name Game</h1>
-			<h2 class="text-center text-lg font-black mb-4">Game Code: { gameID.String() }</h2>
-			@SubmitForm(gameID, SubmitParams{}, SubmitErrors{})
+	@layouts.Base() {
+		<div class="flex justify-center">
+			<div
+				id="form-wrapper"
+				class="max-w-md w-full py-12 px-8 rounded-xl"
+			>
+				<h1 class="text-center text-xl font-black mb-8">Submit a name to The Name Game</h1>
+				<h2 class="text-center text-lg font-black mb-4">Game Code: { gameID.String() }</h2>
+				@SubmitForm(gameID, SubmitParams{}, SubmitErrors{})
+			</div>
 		</div>
-	</div>
+	}
 }
