@@ -23,5 +23,5 @@ func NewGame(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
-	return into(c, game.Index(g.ID, true))
+	return into(c, game.Index(g.ID))
 }

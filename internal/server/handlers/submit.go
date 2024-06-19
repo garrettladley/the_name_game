@@ -58,6 +58,7 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 		return into(c, game.SubmitForm(*gameID, params, errs))
 	}
 
+	slog.Info("handling submission", "game_id", gameID, "player_id", playerID, "name", params.Name)
 	if err := g.HandleSubmission(*playerID, params.Name); err != nil {
 		if errors.Is(err, domain.ErrUserAlreadySubmitted) {
 			return c.SendStatus(http.StatusConflict)

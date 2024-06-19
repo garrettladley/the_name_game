@@ -28,6 +28,7 @@ func Setup() *fiber.App {
 	}))
 
 	app.Use(cache.New(cache.Config{
+		Next:         func(c *fiber.Ctx) bool { return c.Path() != "/" },
 		Expiration:   30 * time.Minute,
 		CacheControl: true,
 	}))
@@ -57,7 +58,6 @@ func routes(app *fiber.App) {
 			r.Get("/post", intoSessionedHandler(handlers.PostGame, store))
 			r.Post("/submit", intoSessionedHandler(handlers.Submit, store))
 			r.Post("/end", intoSessionedHandler(handlers.EndGame, store))
-			r.Get("/post", intoSessionedHandler(handlers.PostGame, store))
 		})
 	})
 }

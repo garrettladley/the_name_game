@@ -34,7 +34,7 @@ func PostGame(c *fiber.Ctx, store *fsession.Store) error {
 
 	var view templ.Component
 	if g.IsHost(*playerID) {
-		if g.SubmittedCount() == 0 {
+		if g.RemainingToSelect() == 0 {
 			if err := session.DeleteIDFromSession(c, store); err != nil {
 				slog.Error("failed to delete player_id from session", "error", err)
 				return c.SendStatus(http.StatusInternalServerError)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/garrettladley/the_name_game/views/layouts"
+	"github.com/garrettladley/the_name_game/internal/server/middleware"
 )
 
 type SubmitParams struct {
@@ -40,39 +41,10 @@ templ SubmitForm(gameID domain.ID, params SubmitParams, errors SubmitErrors) {
 				Submit
 			</button>
 		</form>
-		@templ.JSONScript("gameID", gameID)
 		<button
 			id="shareButton"
 			class="btn btn-primary w-full"
-			hx-on:click="
-				const url = `https://${window.location.hostname}/game/${JSON.parse(document.getElementById('gameID').textContent)}/join`;
-				if (navigator.share) {
-					try {
-						navigator.share({
-							title: 'Join this game',
-							text: 'Check out this game!',
-							url: url
-						})
-						.then(() => {
-							console.log('Content shared successfully');
-						})
-						.catch((error) => {
-							console.error('Error sharing content:', error);
-						});
-					} catch (error) {
-						console.error('Error sharing content:', error);
-					}
-				} else {
-					navigator.clipboard.writeText(url)
-						.then(() => {
-							alert('URL copied to clipboard');
-							console.log('URL copied to clipboard');
-						})
-						.catch((error) => {
-							console.error('Error copying URL:', error);
-						});
-				}
-			"
+			hx-on:click={ shareButtonJS(ctx, gameID) }
 		>
 			Share this game
 		</button>
@@ -86,6 +58,36 @@ templ SubmitForm(gameID domain.ID, params SubmitParams, errors SubmitErrors) {
 			Show QR Code
 		</button>
 	</div>
+}
+
+func shareButtonJS(ctx context.Context, gameID domain.ID) templ.ComponentScript {
+	return templ.ComponentScript{
+		Call: fmt.Sprintf(`
+		const url = '%s/game/%s/join';
+		if (navigator.share) {
+			try {
+				navigator.share({
+					title: 'Join this game',
+					text: 'Check out this game!',
+					url: url
+				})
+				.catch((error) => {
+					console.error('Error sharing content:', error);
+				});
+			} catch (error) {
+				console.error('Error sharing content:', error);
+			}
+		} else {
+			navigator.clipboard.writeText(url)
+				.then(() => {
+					alert('URL copied to clipboard');
+				})
+				.catch((error) => {
+					console.error('Error copying URL:', error);
+				});
+		}`,
+			ctx.Value(middleware.OriginalURLKey), gameID),
+	}
 }
 
 templ SubmitSuccess(gameID domain.ID) {
@@ -102,7 +104,7 @@ templ SubmitSuccess(gameID domain.ID) {
 	</button>
 }
 
-templ Index(gameID domain.ID, isHost bool) {
+templ Index(gameID domain.ID) {
 	@layouts.Base() {
 		<div class="flex justify-center">
 			<div

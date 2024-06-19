@@ -11,8 +11,9 @@ import (
 )
 
 type Player struct {
-	ID   ID
-	Name *string
+	ID           ID
+	Name         *string
+	beenSelected bool
 }
 
 func (p *Player) IsSubmitted() bool {
@@ -20,13 +21,13 @@ func (p *Player) IsSubmitted() bool {
 }
 
 type Game struct {
-	ID             ID
-	HostID         ID
-	IsActive       bool
-	ExpiresAt      time.Time
-	submittedCount int
-	lock           sync.RWMutex
-	players        map[ID]Player
+	ID                ID
+	HostID            ID
+	IsActive          bool
+	ExpiresAt         time.Time
+	lock              sync.RWMutex
+	players           map[ID]Player
+	remainingToSelect int
 }
 
 func NewGame(hostID ID) *Game {
@@ -40,7 +41,9 @@ func NewGame(hostID ID) *Game {
 	}
 
 	game.players[hostID] = Player{
-		ID: hostID,
+		ID:           hostID,
+		Name:         nil,
+		beenSelected: false,
 	}
 
 	return &game
@@ -75,6 +78,7 @@ func (g *Game) IsHost(playerID ID) bool {
 }
 
 func (g *Game) HandleSubmission(playerID ID, name string) error {
+	slog.Info("handling submission", "player_id", playerID, "name", name, "is_host", g.IsHost(playerID))
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
@@ -92,10 +96,10 @@ func (g *Game) HandleSubmission(playerID ID, name string) error {
 	}
 
 	player.Name = &name
-
 	g.players[playerID] = player
 
-	g.submittedCount++
+	slog.Info("after submission", "player", *g.players[playerID].Name)
+	g.remainingToSelect++
 
 	return nil
 }
@@ -103,10 +107,6 @@ func (g *Game) HandleSubmission(playerID ID, name string) error {
 func (g *Game) End() error {
 	g.lock.Lock()
 	defer g.lock.Unlock()
-
-	if !g.IsActive {
-		return nil
-	}
 
 	g.IsActive = false
 
@@ -120,44 +120,58 @@ func (g *Game) Len() int {
 	return len(g.players)
 }
 
-func (g *Game) SubmittedCount() int {
+func (g *Game) RemainingToSelect() int {
 	g.lock.RLock()
 	defer g.lock.RUnlock()
 
-	return g.submittedCount
+	return g.remainingToSelect
 }
 
 func (g *Game) Next() (*string, bool) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
+	var all []string
+	for _, player := range g.players {
+		if player.IsSubmitted() {
+			all = append(all, *player.Name)
+		}
+	}
+	slog.Info("all names", "names", all)
 	if g.IsActive {
 		return nil, false
 	}
 
-	if g.submittedCount == 0 {
+	if g.remainingToSelect == 0 {
 		return nil, false
 	}
 
-	var selectedPlayer Player
-	var selectedID ID
+	var (
+		selectedPlayer Player
+		selectedID     ID
+	)
 
-	for {
-		keys := make([]ID, 0, len(g.players))
-		for id := range g.players {
-			keys = append(keys, id)
-		}
-
-		randomIndex := rand.Intn(len(keys))
-		selectedID = keys[randomIndex]
-		selectedPlayer = g.players[selectedID]
-
-		if selectedPlayer.IsSubmitted() {
-			delete(g.players, selectedID)
-			g.submittedCount--
-			return selectedPlayer.Name, true
+	var available []ID
+	for id, player := range g.players {
+		if player.IsSubmitted() && !player.beenSelected {
+			slog.Info("player available", "id", id, "name", *player.Name)
+			available = append(available, id)
 		}
 	}
+
+	if len(available) == 0 {
+		return nil, false
+	}
+
+	randomIndex := rand.Intn(len(available))
+	selectedID = available[randomIndex]
+	selectedPlayer = g.players[selectedID]
+
+	selectedPlayer.beenSelected = true
+	g.players[selectedID] = selectedPlayer
+	g.remainingToSelect--
+	slog.Info("returning name", "name", *selectedPlayer.Name)
+	return selectedPlayer.Name, true
 }
 
 func (g *Game) Slog() func() {
