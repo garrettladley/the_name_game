@@ -10,7 +10,7 @@ import (
 	qrcode "github.com/skip2/go-qrcode"
 )
 
-func JoinGameQrCode(c *fiber.Ctx) error {
+func JoinGameQRCode(c *fiber.Ctx) error {
 	gameID, err := gameIDFromParams(c)
 	if err != nil {
 		return c.SendStatus(fiber.StatusBadRequest)
@@ -26,5 +26,5 @@ func JoinGameQrCode(c *fiber.Ctx) error {
 		return err
 	}
 
-	return into(c, game.JoinGameQr(base64.StdEncoding.EncodeToString(png)))
+	return into(c, game.JoinGameQR(base64.StdEncoding.EncodeToString(png)))
 }

@@ -3,7 +3,6 @@
 NODE_BIN := ./node_modules/.bin
 
 install: install-templ gen-templ
-	@go install github.com/a-h/templ/cmd/templ@latest
 	@go get ./...
 	@go mod tidy
 	@go mod download
@@ -14,16 +13,16 @@ install: install-templ gen-templ
 	@npm install -D tailwindcss
 
 gen-css:
-	@$(NODE_BIN)/tailwindcss build -i views/css/app.css -o public/styles.css
+	@$(NODE_BIN)/tailwindcss build -i views/css/app.css -o public/styles.css --minify
 
 watch-css:
-	@$(NODE_BIN)/tailwindcss -i views/css/app.css -o public/styles.css --watch 
+	@$(NODE_BIN)/tailwindcss -i views/css/app.css -o public/styles.css --minify --watch 
 
 install-templ:
 	@go install github.com/a-h/templ/cmd/templ@latest
 
 gen-templ:
-	@templ generate views
+	@templ generate
 
 watch-templ:
 	@templ generate --watch --proxy=http://127.0.0.1:3000

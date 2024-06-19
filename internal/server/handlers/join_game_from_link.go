@@ -11,7 +11,7 @@ import (
 	fsession "github.com/gofiber/fiber/v2/middleware/session"
 )
 
-func JoinGameFromQrCode(c *fiber.Ctx, store *fsession.Store) error {
+func JoinGameFromLink(c *fiber.Ctx, store *fsession.Store) error {
 	gameID, err := gameIDFromParams(c)
 	if err != nil {
 		return c.SendStatus(http.StatusBadRequest)

@@ -11,9 +11,12 @@ import (
 )
 
 type Player struct {
-	ID          ID
-	IsSubmitted bool
-	Name        *string
+	ID   ID
+	Name *string
+}
+
+func (p *Player) IsSubmitted() bool {
+	return p.Name != nil
 }
 
 type Game struct {
@@ -37,8 +40,7 @@ func NewGame(hostID ID) *Game {
 	}
 
 	game.players[hostID] = Player{
-		ID:          hostID,
-		IsSubmitted: false,
+		ID: hostID,
 	}
 
 	return &game
@@ -57,8 +59,7 @@ func (g *Game) Join(playerID ID) {
 	defer g.lock.Unlock()
 
 	g.players[playerID] = Player{
-		ID:          playerID,
-		IsSubmitted: false,
+		ID: playerID,
 	}
 }
 
@@ -86,12 +87,11 @@ func (g *Game) HandleSubmission(playerID ID, name string) error {
 		return fmt.Errorf("player with ID %s not found", playerID)
 	}
 
-	if player.IsSubmitted {
+	if player.IsSubmitted() {
 		return ErrUserAlreadySubmitted
 	}
 
 	player.Name = &name
-	player.IsSubmitted = true
 
 	g.players[playerID] = player
 
@@ -152,7 +152,7 @@ func (g *Game) Next() (*string, bool) {
 		selectedID = keys[randomIndex]
 		selectedPlayer = g.players[selectedID]
 
-		if selectedPlayer.IsSubmitted {
+		if selectedPlayer.IsSubmitted() {
 			delete(g.players, selectedID)
 			g.submittedCount--
 			return selectedPlayer.Name, true
