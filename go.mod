@@ -4,7 +4,9 @@ go 1.22.2
 
 require (
 	github.com/a-h/templ v0.2.707
+	github.com/goccy/go-json v0.10.3
 	github.com/gofiber/fiber/v2 v2.52.4
+	github.com/gofiber/storage/memory/v2 v2.0.1
 )
 
 require (

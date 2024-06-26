@@ -14,7 +14,7 @@ const (
 	player_id_key string = "0"
 )
 
-func GetIDFromSession(c *fiber.Ctx, store *session.Store) (*domain.ID, error) {
+func GetID(c *fiber.Ctx, store *session.Store) (*domain.ID, error) {
 	session, err := store.Get(c)
 	if err != nil {
 		slog.Error("failed to get session", "error", err)
@@ -34,7 +34,7 @@ func GetIDFromSession(c *fiber.Ctx, store *session.Store) (*domain.ID, error) {
 	return &id, nil
 }
 
-func SetIDInSession(c *fiber.Ctx, store *session.Store, value domain.ID, opts ...SessionSetterOpts) error {
+func SetID(c *fiber.Ctx, store *session.Store, value domain.ID, opts ...SessionSetterOpts) error {
 	session, err := store.Get(c)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func SetIDInSession(c *fiber.Ctx, store *session.Store, value domain.ID, opts ..
 	return session.Save()
 }
 
-func DeleteIDFromSession(c *fiber.Ctx, store *session.Store) error {
+func DeleteID(c *fiber.Ctx, store *session.Store) error {
 	session, err := store.Get(c)
 	if err != nil {
 		return err
@@ -58,6 +58,15 @@ func DeleteIDFromSession(c *fiber.Ctx, store *session.Store) error {
 	session.Delete(player_id_key)
 
 	return session.Save()
+}
+
+func Destroy(c *fiber.Ctx, store *session.Store) error {
+	session, err := store.Get(c)
+	if err != nil {
+		return err
+	}
+
+	return session.Destroy()
 }
 
 type SessionSetterOpts func(*session.Session)

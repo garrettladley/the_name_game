@@ -3,168 +3,166 @@ package domain
 import (
 	"fmt"
 	"log/slog"
-	"math/rand"
-	"sync"
-	"time"
 
-	"github.com/garrettladley/the_name_game/internal/constants"
+	go_json "github.com/goccy/go-json"
 )
 
-type Player struct {
-	ID   ID
-	Name *string
-}
-
-func (p *Player) IsSubmitted() bool {
-	return p.Name != nil
-}
-
 type Game struct {
-	ID             ID
-	HostID         ID
-	IsActive       bool
-	ExpiresAt      time.Time
-	submittedCount int
-	lock           sync.RWMutex
-	players        map[ID]Player
+	ID       ID            `json:"id"`
+	HostID   ID            `json:"host_id"`
+	IsActive bool          `json:"is_active"`
+	Players  map[ID]Player `json:"players"`
 }
 
-func NewGame(hostID ID) *Game {
-	game := Game{
-		ID:        NewID(),
-		HostID:    hostID,
-		IsActive:  true,
-		ExpiresAt: time.Now().Add(constants.EXPIRE_AFTER),
-		lock:      sync.RWMutex{},
-		players:   make(map[ID]Player),
+type Player struct {
+	ID            ID      `json:"id"`
+	SubmittedName *string `json:"submitted_name"`
+	Seen          bool    `json:"seen"`
+}
+
+func NewGame(hostID ID) (*Game, error) {
+	host := Player{
+		ID:            hostID,
+		SubmittedName: nil,
 	}
 
-	game.players[hostID] = Player{
-		ID: hostID,
+	game := &Game{
+		ID:       NewID(),
+		HostID:   hostID,
+		IsActive: true,
+		Players:  map[ID]Player{hostID: host},
 	}
 
-	return &game
-}
-
-func (g *Game) Get(playerID ID) (Player, bool) {
-	g.lock.RLock()
-	defer g.lock.RUnlock()
-
-	player, ok := g.players[playerID]
-	return player, ok
-}
-
-func (g *Game) Join(playerID ID) {
-	g.lock.Lock()
-	defer g.lock.Unlock()
-
-	g.players[playerID] = Player{
-		ID: playerID,
+	if err := GAMES.Set(game); err != nil {
+		return nil, err
 	}
+
+	return game, nil
 }
 
-func (g *Game) Set(playerID ID, player Player) {
-	g.lock.Lock()
-	defer g.lock.Unlock()
+func (g *Game) Get(playerID ID) (*Player, error) {
+	player, ok := g.Players[playerID]
+	if !ok {
+		return nil, fmt.Errorf("player with id '%s' not found in game '%s'", playerID, g.ID)
+	}
 
-	g.players[playerID] = player
+	return &player, nil
+}
+
+func (g *Game) Join(playerID ID) error {
+	game, err := GAMES.Get(g.ID)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := game.Players[playerID]; ok {
+		return fmt.Errorf("player with id '%s' already in game '%s'", playerID, g.ID)
+	}
+
+	player := Player{
+		ID:            playerID,
+		SubmittedName: nil,
+	}
+
+	game.Players[playerID] = player
+
+	if err := GAMES.Set(game); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (g *Game) IsHost(playerID ID) bool {
 	return g.HostID == playerID
 }
 
+func (g *Game) Unseen() int {
+	var unseen int
+	for _, player := range g.Players {
+		if !player.Seen {
+			unseen++
+		}
+	}
+	return unseen
+}
+
 func (g *Game) HandleSubmission(playerID ID, name string) error {
-	g.lock.Lock()
-	defer g.lock.Unlock()
-
-	if !g.IsActive {
-		return ErrGameOver
+	player, err := g.Get(playerID)
+	if err != nil {
+		return err
 	}
 
-	player, ok := g.players[playerID]
-	if !ok {
-		return fmt.Errorf("player with ID %s not found", playerID)
-	}
-
-	if player.IsSubmitted() {
+	if player.SubmittedName != nil {
 		return ErrUserAlreadySubmitted
 	}
 
-	player.Name = &name
+	player.SubmittedName = &name
+	g.Players[playerID] = *player
 
-	g.players[playerID] = player
-
-	g.submittedCount++
+	if err := GAMES.Set(g); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (g *Game) End() error {
-	g.lock.Lock()
-	defer g.lock.Unlock()
-
-	if !g.IsActive {
-		return nil
-	}
-
 	g.IsActive = false
+
+	if err := GAMES.Set(g); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (g *Game) Len() int {
-	g.lock.RLock()
-	defer g.lock.RUnlock()
-
-	return len(g.players)
-}
-
-func (g *Game) SubmittedCount() int {
-	g.lock.RLock()
-	defer g.lock.RUnlock()
-
-	return g.submittedCount
-}
-
 func (g *Game) Next() (*string, bool) {
-	g.lock.Lock()
-	defer g.lock.Unlock()
-
-	if g.IsActive {
+	if g.Unseen() == 0 {
 		return nil, false
 	}
 
-	if g.submittedCount == 0 {
+	var selectedPlayerID ID
+
+	for playerID, player := range g.Players {
+		if player.SubmittedName != nil {
+			selectedPlayerID = playerID
+			break
+		}
+	}
+
+	player := g.Players[selectedPlayerID]
+	name := *player.SubmittedName
+	player.Seen = true
+	g.Players[selectedPlayerID] = player
+
+	if err := GAMES.Set(g); err != nil {
 		return nil, false
 	}
 
-	var selectedPlayer Player
-	var selectedID ID
-
-	for {
-		keys := make([]ID, 0, len(g.players))
-		for id := range g.players {
-			keys = append(keys, id)
-		}
-
-		randomIndex := rand.Intn(len(keys))
-		selectedID = keys[randomIndex]
-		selectedPlayer = g.players[selectedID]
-
-		if selectedPlayer.IsSubmitted() {
-			delete(g.players, selectedID)
-			g.submittedCount--
-			return selectedPlayer.Name, true
-		}
-	}
+	return &name, true
 }
 
 func (g *Game) Slog() func() {
-	g.lock.RLock()
-	defer g.lock.RUnlock()
-
 	return func() {
-		slog.Info("game", "id", g.ID, "host", g.HostID, "active", g.IsActive, "expires_at", g.ExpiresAt, "players", g.players)
+		slog.Info("game", "id", g.ID, "host_id", g.HostID, "is_active", g.IsActive, "players", g.Players)
 	}
+}
+
+func (g *Game) Marshal() (*string, error) {
+	game, err := go_json.Marshal(g)
+	if err != nil {
+		return nil, err
+	}
+	strGame := string(game)
+	return &strGame, nil
+}
+
+func UnmarshalGame(strGame string) (*Game, error) {
+	var game Game
+	err := go_json.Unmarshal([]byte(strGame), &game)
+	if err != nil {
+		return nil, err
+	}
+	return &game, nil
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/garrettladley/the_name_game/internal/server/handlers"
@@ -28,11 +29,24 @@ func Setup() *fiber.App {
 	}))
 
 	app.Use(cache.New(cache.Config{
-		Expiration:   30 * time.Minute,
+		Next: func(c *fiber.Ctx) bool {
+			// cache static files
+			return !slices.Contains([]string{
+				"/",
+				"/htmx/htmx.min.js",
+				"/public/styles.css",
+				"site.manifest",
+				"favicon-32x32.png",
+				"favicon-16x16.png",
+				"favicon.ico",
+			},
+				c.Path())
+		},
+		Expiration:   time.Hour * 24 * 365, // 1 year
 		CacheControl: true,
 	}))
 
-	app.Use(middleware.SetOriginalURL)
+	app.Use(middleware.SetBaseURL)
 
 	routes(app)
 
@@ -57,7 +71,6 @@ func routes(app *fiber.App) {
 			r.Get("/post", intoSessionedHandler(handlers.PostGame, store))
 			r.Post("/submit", intoSessionedHandler(handlers.Submit, store))
 			r.Post("/end", intoSessionedHandler(handlers.EndGame, store))
-			r.Get("/post", intoSessionedHandler(handlers.PostGame, store))
 		})
 	})
 }

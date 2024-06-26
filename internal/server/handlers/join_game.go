@@ -26,9 +26,9 @@ func JoinGame(c *fiber.Ctx, store *fsession.Store) error {
 		return into(c, game.JoinForm(params, errs))
 	}
 
-	g, ok := domain.GAMES.Get(*gameID)
-	if !ok {
-		errs.GameID = "Game not found"
+	g, err := domain.GAMES.Get(*gameID)
+	if err != nil {
+		errs.GameID = "Error finding game"
 		return into(c, game.JoinForm(params, errs))
 	}
 
@@ -36,7 +36,7 @@ func JoinGame(c *fiber.Ctx, store *fsession.Store) error {
 
 	g.Join(playerID)
 
-	if err := session.SetIDInSession(c, store, playerID, session.SetExpiry(constants.EXPIRE_AFTER)); err != nil {
+	if err := session.SetID(c, store, playerID, session.SetExpiry(constants.EXPIRE_AFTER)); err != nil {
 		slog.Error("failed to set player_id in session", "error", err)
 		return c.SendStatus(http.StatusInternalServerError)
 	}

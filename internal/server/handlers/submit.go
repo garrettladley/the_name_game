@@ -23,16 +23,15 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusBadRequest)
 	}
 
-	playerID, err := session.GetIDFromSession(c, store)
+	playerID, err := session.GetID(c, store)
 	if err != nil {
 		slog.Error("failed to get player_id from session", "error", err)
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
-	g, ok := domain.GAMES.Get(*gameID)
-	if !ok {
-		slog.Error("game not found", "game_id", gameID)
-		return c.SendStatus(http.StatusNotFound)
+	g, err := domain.GAMES.Get(*gameID)
+	if err != nil {
+		return err
 	}
 
 	if !g.IsActive {
@@ -44,7 +43,7 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 	}
 
 	var errs game.SubmitErrors
-	ok = true
+	ok := true
 	if len(params.Name) < 2 {
 		ok = false
 		errs.Name = "Name must be at least 2 characters"
@@ -58,6 +57,7 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 		return into(c, game.SubmitForm(*gameID, params, errs))
 	}
 
+	slog.Info("handling submission", "game_id", gameID, "player_id", playerID, "name", params.Name)
 	if err := g.HandleSubmission(*playerID, params.Name); err != nil {
 		if errors.Is(err, domain.ErrUserAlreadySubmitted) {
 			return c.SendStatus(http.StatusConflict)
