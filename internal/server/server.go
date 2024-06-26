@@ -35,7 +35,7 @@ func Setup() *fiber.App {
 				"/",
 				"/htmx/htmx.min.js",
 				"/public/styles.css",
-				"/site.manifest",
+				"/site.webmanifest",
 				"/favicon-32x32.png",
 				"/favicon-16x16.png",
 				"/favicon.ico",
