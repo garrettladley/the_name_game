@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/garrettladley/the_name_game/internal/domain"
 	"github.com/garrettladley/the_name_game/internal/server/session"
 	"github.com/garrettladley/the_name_game/views/game"
@@ -31,28 +30,21 @@ func PostGame(c *fiber.Ctx, store *fsession.Store) error {
 		return err
 	}
 
-	var view templ.Component
-	if g.IsHost(*playerID) {
-		if g.Unseen() == 0 {
-			if err := session.DeleteID(c, store); err != nil {
-				slog.Error("failed to delete player_id from session", "error", err)
-				return c.SendStatus(http.StatusInternalServerError)
-			}
-			if err := session.Destroy(c, store); err != nil {
-				slog.Error("failed to destroy session", "error", err)
-				return c.SendStatus(http.StatusInternalServerError)
-			}
-			return hxRedirect(c, "/")
+	if !g.IsHost(*playerID) {
+		return c.SendStatus(http.StatusForbidden)
+	}
+
+	if g.Unseen() == 0 {
+		if err := session.DeleteID(c, store); err != nil {
+			slog.Error("failed to delete player_id from session", "error", err)
+			return c.SendStatus(http.StatusInternalServerError)
 		}
-		name, _ := g.Next() // ignore error as we know there is a next name
-		view = game.NameInfo(*name, fmt.Sprintf("/game/%s/post", gameID))
-	} else {
-		view = game.Post()
 		if err := session.Destroy(c, store); err != nil {
 			slog.Error("failed to destroy session", "error", err)
 			return c.SendStatus(http.StatusInternalServerError)
 		}
+		return hxRedirect(c, "/")
 	}
-
-	return into(c, view)
+	name, _ := g.Next() // ignore error as we know there is a next name
+	return into(c, game.NameInfo(*name, fmt.Sprintf("/game/%s/post", gameID)))
 }

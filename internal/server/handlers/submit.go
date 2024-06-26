@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -66,9 +65,14 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
-	if g.IsHost(*playerID) {
-		return into(c, game.SubmitSuccess(*gameID))
+	isHost := g.IsHost(*playerID)
+
+	if !isHost {
+		if err := session.Destroy(c, store); err != nil {
+			slog.Error("failed to destroy session", "error", err)
+			return c.SendStatus(http.StatusInternalServerError)
+		}
 	}
 
-	return hxRedirect(c, fmt.Sprintf("/game/%s/post", gameID))
+	return into(c, game.SubmitSuccess(isHost, *gameID))
 }
