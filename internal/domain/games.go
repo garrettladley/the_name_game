@@ -1,74 +1,103 @@
 package domain
 
 import (
-	"log/slog"
-	"sync"
-	"time"
+	"bytes"
+	"compress/gzip"
+	"io"
+	"strings"
+
+	"github.com/garrettladley/the_name_game/internal/constants"
+	"github.com/gofiber/storage/memory/v2"
 )
 
 var GAMES = NewGames()
 
 type Games struct {
-	lock  sync.RWMutex
-	games map[ID]*Game
+	store *memory.Storage
 }
 
 func NewGames() *Games {
 	return &Games{
-		lock:  sync.RWMutex{},
-		games: make(map[ID]*Game),
+		store: memory.New(),
 	}
 }
 
-func (g *Games) New(game *Game) {
-	g.lock.Lock()
-	defer g.lock.Unlock()
-
-	g.games[game.ID] = game
-}
-
-func (g *Games) Get(id ID) (*Game, bool) {
-	g.lock.RLock()
-	defer g.lock.RUnlock()
-
-	game, ok := g.games[id]
-	return game, ok
-}
-
-func (g *Games) DeleteExpired() {
-	g.lock.Lock()
-	defer g.lock.Unlock()
-
-	for id, game := range g.games {
-		if time.Now().After(game.ExpiresAt) {
-			delete(g.games, id)
-		}
+func (g *Games) New(game *Game) error {
+	mGame, err := game.Marshal()
+	if err != nil {
+		return err
 	}
+
+	var b bytes.Buffer
+	gz := gzip.NewWriter(&b)
+	if _, err := gz.Write([]byte(*mGame)); err != nil {
+		return err
+	}
+
+	if err := gz.Flush(); err != nil {
+		return err
+	}
+
+	if err := gz.Close(); err != nil {
+		return err
+	}
+
+	return g.store.Set(game.ID.String(), b.Bytes(), constants.EXPIRE_AFTER)
+}
+
+func (g *Games) Get(id ID) (*Game, error) {
+	game, err := g.store.Get(id.String())
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := gzip.NewReader(strings.NewReader(string(game)))
+	if err != nil {
+		return nil, err
+	}
+	s, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
+	umGame, err := UnmarshalGame(string(s))
+	if err != nil {
+		return nil, err
+	}
+
+	return umGame, nil
+}
+
+func (g *Games) Set(game *Game) error {
+	mGame, err := game.Marshal()
+	if err != nil {
+		return err
+	}
+
+	var b bytes.Buffer
+	gz := gzip.NewWriter(&b)
+	if _, err := gz.Write([]byte(*mGame)); err != nil {
+		return err
+	}
+
+	if err := gz.Flush(); err != nil {
+		return err
+	}
+
+	if err := gz.Close(); err != nil {
+		return err
+	}
+
+	return g.store.Set(game.ID.String(), b.Bytes(), constants.EXPIRE_AFTER)
 }
 
 func (g *Games) Exists(id ID) bool {
-	g.lock.RLock()
-	defer g.lock.RUnlock()
-
-	_, ok := g.games[id]
-	return ok
-}
-
-func (g *Games) Delete(id ID) {
-	g.lock.Lock()
-	defer g.lock.Unlock()
-
-	delete(g.games, id)
+	_, err := g.store.Get(id.String())
+	return err == nil
 }
 
 func (g *Games) Slog() func() {
-	g.lock.RLock()
-	defer g.lock.RUnlock()
-
 	return func() {
-		slog.Info("games", "count", len(g.games))
-		for _, game := range g.games {
-			game.Slog()()
-		}
+		// TODO
 	}
 }

@@ -86,7 +86,7 @@ func shareButtonJS(ctx context.Context, gameID domain.ID) templ.ComponentScript 
 					console.error('Error copying URL:', error);
 				});
 		}`,
-			ctx.Value(middleware.OriginalURLKey), gameID),
+			ctx.Value(middleware.BaseURLKey), gameID),
 	}
 }
 

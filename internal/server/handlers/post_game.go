@@ -20,23 +20,26 @@ func PostGame(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusBadRequest)
 	}
 
-	playerID, err := session.GetIDFromSession(c, store)
+	playerID, err := session.GetID(c, store)
 	if err != nil {
 		slog.Error("failed to get player_id from session", "error", err)
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
-	g, ok := domain.GAMES.Get(*gameID)
-	if !ok {
-		slog.Error("game not found", "game_id", gameID)
-		return c.SendStatus(http.StatusNotFound)
+	g, err := domain.GAMES.Get(*gameID)
+	if err != nil {
+		return err
 	}
 
 	var view templ.Component
 	if g.IsHost(*playerID) {
-		if g.RemainingToSelect() == 0 {
-			if err := session.DeleteIDFromSession(c, store); err != nil {
+		if g.Unseen() == 0 {
+			if err := session.DeleteID(c, store); err != nil {
 				slog.Error("failed to delete player_id from session", "error", err)
+				return c.SendStatus(http.StatusInternalServerError)
+			}
+			if err := session.Destroy(c, store); err != nil {
+				slog.Error("failed to destroy session", "error", err)
 				return c.SendStatus(http.StatusInternalServerError)
 			}
 			return hxRedirect(c, "/")
@@ -45,6 +48,10 @@ func PostGame(c *fiber.Ctx, store *fsession.Store) error {
 		view = game.NameInfo(*name, fmt.Sprintf("/game/%s/post", gameID))
 	} else {
 		view = game.Post()
+		if err := session.Destroy(c, store); err != nil {
+			slog.Error("failed to destroy session", "error", err)
+			return c.SendStatus(http.StatusInternalServerError)
+		}
 	}
 
 	return into(c, view)

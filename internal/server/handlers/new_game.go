@@ -15,10 +15,14 @@ import (
 
 func NewGame(c *fiber.Ctx, store *fsession.Store) error {
 	hostID := domain.NewID()
-	g := domain.NewGame(hostID)
+	g, err := domain.NewGame(hostID)
+	if err != nil {
+		return err
+	}
+
 	domain.GAMES.New(g)
 
-	if err := session.SetIDInSession(c, store, hostID, session.SetExpiry(constants.EXPIRE_AFTER)); err != nil {
+	if err := session.SetID(c, store, hostID, session.SetExpiry(constants.EXPIRE_AFTER)); err != nil {
 		slog.Error("failed to set player_id in session", "error", err)
 		return c.SendStatus(http.StatusInternalServerError)
 	}

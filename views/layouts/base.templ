@@ -13,6 +13,9 @@ templ Base() {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link rel="stylesheet" href="/public/styles.css"/>
 			<script src="/htmx/htmx.min.js"></script>
+			<link rel="preload" href="/public/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'"/>
+			<noscript><link rel="stylesheet" href="/public/styles.css"/></noscript>
+			<script src="/htmx/htmx.min.js" defer></script>
 			<link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon.png"/>
 			<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
 			<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
@@ -26,7 +29,7 @@ templ Base() {
 			<meta property="og:title" content="The Name Game"/>
 			<meta property="og:description" content="Play The Name Game with your friends!"/>
 			<meta property="og:image" content="/apple-touch-icon.png"/>
-			<meta property="og:url" content={ GetOriginalURL(ctx) }/>
+			<meta property="og:url" content={ GetBaseURL(ctx) }/>
 			<meta property="og:site_name" content="The Name Game"/>
 			<meta name="twitter:card" content="summary_large_image"/>
 			<meta name="twitter:title" content="The Name Game"/>
@@ -39,7 +42,7 @@ templ Base() {
 			<meta property="og:title" content="The Name Game"/>
 			<meta property="og:description" content="Play The Name Game with your friends!"/>
 			<meta property="og:image" content="/apple-touch-icon.png"/>
-			<meta property="og:url" content={ GetOriginalURL(ctx) }/>
+			<meta property="og:url" content={ GetBaseURL(ctx) }/>
 		</head>
 		<body
 			class="antialiased h-screen w-full bg-base-200"
@@ -49,9 +52,9 @@ templ Base() {
 	</html>
 }
 
-func GetOriginalURL(ctx context.Context) string {
-	if originalURL, ok := ctx.Value(middleware.OriginalURLKey).(string); ok {
-		return originalURL
+func GetBaseURL(ctx context.Context) string {
+	if baseURL, ok := ctx.Value(middleware.BaseURLKey).(string); ok {
+		return baseURL
 	}
 	return ""
 }

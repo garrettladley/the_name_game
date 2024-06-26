@@ -17,16 +17,16 @@ func JoinGameFromLink(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusBadRequest)
 	}
 
-	game, ok := domain.GAMES.Get(*gameID)
-	if !ok {
-		return c.SendStatus(http.StatusNotFound)
+	game, err := domain.GAMES.Get(*gameID)
+	if err != nil {
+		return err
 	}
 
 	playerID := domain.NewID()
 
 	game.Join(playerID)
 
-	if err := session.SetIDInSession(c, store, playerID, session.SetExpiry(constants.EXPIRE_AFTER)); err != nil {
+	if err := session.SetID(c, store, playerID, session.SetExpiry(constants.EXPIRE_AFTER)); err != nil {
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 

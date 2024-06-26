@@ -76,6 +76,5 @@ func static(app *fiber.App) {
 func backgroundJobs(ctx context.Context) {
 	j := jobs.New(domain.GAMES)
 
-	background.Go(j.CleanGames(ctx))
 	background.Go(j.GamesInfo(ctx))
 }
