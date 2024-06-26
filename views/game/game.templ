@@ -43,7 +43,7 @@ templ SubmitForm(gameID domain.ID, params SubmitParams, errors SubmitErrors) {
 		</form>
 		<button
 			id="shareButton"
-			class="btn btn-primary w-full"
+			class="btn btn-secondary w-full"
 			hx-on:click={ shareButtonJS(ctx, gameID) }
 		>
 			Share this game
@@ -90,31 +90,47 @@ func shareButtonJS(ctx context.Context, gameID domain.ID) templ.ComponentScript 
 	}
 }
 
-templ SubmitSuccess(gameID domain.ID) {
+templ SubmitSuccess(isHost bool, gameID domain.ID) {
 	<h1 class="text-center text-lg font-black mt-4 mb-4">Submission successful!</h1>
-	<button
-		hx-post={ fmt.Sprintf("/game/%s/end", gameID) }
-		hx-swap="outerHTML"
-		hx-target="#form-wrapper"
-		hx-push-url="/"
-		type="submit"
-		class="btn btn-primary w-full"
-	>
-		End Game
-	</button>
+	if isHost {
+		<button
+			hx-post={ fmt.Sprintf("/game/%s/end", gameID) }
+			hx-target="#form-wrapper"
+			hx-push-url="/"
+			type="submit"
+			class="btn btn-primary w-full"
+		>
+			End Game
+		</button>
+	} else {
+		<a
+			href="/"
+			class="btn btn-primary w-full"
+		>
+			Home
+		</a>
+	}
 }
 
-templ Index(gameID domain.ID) {
-	@layouts.Base() {
-		<div class="flex justify-center">
-			<div
-				id="form-wrapper"
-				class="max-w-md w-full py-12 px-8 rounded-xl"
-			>
-				<h1 class="text-center text-xl font-black mb-8">Submit a name to The Name Game</h1>
-				<h2 class="text-center text-lg font-black mb-4">Game Code: { gameID.String() }</h2>
-				@SubmitForm(gameID, SubmitParams{}, SubmitErrors{})
-			</div>
+templ index(gameID domain.ID) {
+	<div class="flex justify-center">
+		<div
+			id="form-wrapper"
+			class="max-w-md w-full py-12 px-8 rounded-xl"
+		>
+			<h1 class="text-center text-xl font-black mb-8">Submit a name to The Name Game</h1>
+			<h2 class="text-center text-lg font-black mb-4">Game Code: { gameID.String() }</h2>
+			@SubmitForm(gameID, SubmitParams{}, SubmitErrors{})
 		</div>
+	</div>
+}
+
+templ Index(withBase bool, gameID domain.ID) {
+	if withBase {
+		@layouts.Base() {
+			@index(gameID)
+		}
+	} else {
+		@index(gameID)
 	}
 }

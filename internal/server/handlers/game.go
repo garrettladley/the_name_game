@@ -22,5 +22,5 @@ func Game(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusNotFound)
 	}
 
-	return into(c, game.Index(*gameID))
+	return into(c, game.Index(false, *gameID))
 }

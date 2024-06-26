@@ -21,16 +21,16 @@ type Player struct {
 }
 
 func NewGame(hostID ID) (*Game, error) {
-	host := Player{
-		ID:            hostID,
-		SubmittedName: nil,
-	}
-
 	game := &Game{
 		ID:       NewID(),
 		HostID:   hostID,
 		IsActive: true,
-		Players:  map[ID]Player{hostID: host},
+		Players: map[ID]Player{
+			hostID: {
+				ID:            hostID,
+				SubmittedName: nil,
+			},
+		},
 	}
 
 	if err := GAMES.Set(game); err != nil {
@@ -107,28 +107,21 @@ func (g *Game) HandleSubmission(playerID ID, name string) error {
 	return nil
 }
 
-func (g *Game) End() error {
-	g.IsActive = false
-
-	if err := GAMES.Set(g); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (g *Game) Next() (*string, bool) {
 	if g.Unseen() == 0 {
 		return nil, false
 	}
 
 	var selectedPlayerID ID
-
 	for playerID, player := range g.Players {
-		if player.SubmittedName != nil {
+		if !player.Seen && player.SubmittedName != nil {
 			selectedPlayerID = playerID
 			break
 		}
+	}
+
+	if selectedPlayerID == "" {
+		return nil, false
 	}
 
 	player := g.Players[selectedPlayerID]
@@ -141,6 +134,16 @@ func (g *Game) Next() (*string, bool) {
 	}
 
 	return &name, true
+}
+
+func (g *Game) End() error {
+	g.IsActive = false
+
+	if err := GAMES.Set(g); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (g *Game) Slog() func() {
