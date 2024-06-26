@@ -2,6 +2,7 @@ package domain
 
 import (
 	"fmt"
+	"log/slog"
 
 	go_json "github.com/goccy/go-json"
 )
@@ -144,7 +145,7 @@ func (g *Game) Next() (*string, bool) {
 
 func (g *Game) Slog() func() {
 	return func() {
-		// TODO
+		slog.Info("game", "id", g.ID, "host_id", g.HostID, "is_active", g.IsActive, "players", g.Players)
 	}
 }
 

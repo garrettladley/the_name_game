@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
+	"log/slog"
 	"strings"
 
 	"github.com/garrettladley/the_name_game/internal/constants"
@@ -98,6 +99,18 @@ func (g *Games) Exists(id ID) bool {
 
 func (g *Games) Slog() func() {
 	return func() {
-		// TODO
+		keys, err := g.store.Keys()
+		if err != nil {
+			slog.Error("failed to get keys", "error", err)
+			return
+		}
+		for _, key := range keys {
+			game, err := g.Get(ID(key))
+			if err != nil {
+				slog.Error("failed to get game", "error", err)
+				continue
+			}
+			game.Slog()()
+		}
 	}
 }
