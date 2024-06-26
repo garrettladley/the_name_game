@@ -35,12 +35,13 @@ func Setup() *fiber.App {
 				"/",
 				"/htmx/htmx.min.js",
 				"/public/styles.css",
-				"site.manifest",
-				"favicon-32x32.png",
-				"favicon-16x16.png",
-				"favicon.ico",
+				"/site.manifest",
+				"/favicon-32x32.png",
+				"/favicon-16x16.png",
+				"/favicon.ico",
 			},
-				c.Path())
+				c.Path(),
+			)
 		},
 		Expiration:   time.Hour * 24 * 365, // 1 year
 		CacheControl: true,
