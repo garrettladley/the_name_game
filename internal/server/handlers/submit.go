@@ -61,7 +61,7 @@ func Submit(c *fiber.Ctx, store *fsession.Store) error {
 		if errors.Is(err, domain.ErrUserAlreadySubmitted) {
 			return c.SendStatus(http.StatusConflict)
 		}
-		slog.Error("error handling submission", err)
+		slog.Error("error handling submission", "err", err)
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 

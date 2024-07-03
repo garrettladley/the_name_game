@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -41,5 +40,6 @@ func JoinGame(c *fiber.Ctx, store *fsession.Store) error {
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
-	return hxRedirect(c, fmt.Sprintf("/game/%s", g.ID))
+	// fixme overlap of join and submit a name
+	return into(c, game.Index(false, *gameID))
 }

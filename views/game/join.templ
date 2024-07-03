@@ -15,13 +15,14 @@ templ JoinForm(params JoinParams, errors JoinErrors) {
 		<form
 			hx-post="/game/join"
 			hx-swap="outerHTML"
+			hx-target="#wrapper"
 			class="space-y-4"
 		>
 			<div class="w-full">
 				<div class="label">
 					<span class="label-text">Game Code</span>
 				</div>
-				<input type="text" value={ params.GameID } name="game_id" autocomplete="off" required placeholder="Enter a game code" class="input input-bordered w-full"/>
+				<input type="text" value={ params.GameID } name="game_id" autocomplete="off" autocapitalize="none" required placeholder="Enter a game code" class="input input-bordered w-full"/>
 				if len(errors.GameID) > 0 {
 					<div class="label">
 						<span class="label-text-alt text-error">{ errors.GameID }</span>
@@ -39,7 +40,7 @@ templ JoinForm(params JoinParams, errors JoinErrors) {
 }
 
 templ Join() {
-	<div class="flex justify-center">
+	<div id="wrapper" class="flex justify-center">
 		<div class="max-w-md w-full py-12 px-8 rounded-xl">
 			<h1 class="text-center text-xl font-black mb-8">Join The Name Game</h1>
 			@JoinForm(JoinParams{}, JoinErrors{})

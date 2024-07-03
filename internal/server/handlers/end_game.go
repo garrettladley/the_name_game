@@ -36,7 +36,7 @@ func EndGame(c *fiber.Ctx, store *fsession.Store) error {
 	}
 
 	if err := g.End(); err != nil {
-		slog.Error("error ending game", err)
+		slog.Error("error ending game", "err", err)
 		return c.SendStatus(http.StatusInternalServerError)
 	}
 
